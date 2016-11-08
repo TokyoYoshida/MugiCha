@@ -45,15 +45,27 @@ VALUE do_interpret(ASTNODE *ast_rootp)
   return v;
 }
 
+ASTNODE *root_call_main_inserted(ASTNODE *rootp)
+{
+  ASTNODE *call_main;
+
+  call_main = make_ast_call_func("main" ,NULL);
+
+  return make_ast_op(SEQ, rootp, call_main);
+}
+
 void mugicha_main(ASTNODE *rootp)
 {
+  ASTNODE *root_call_main;
   VALUE dp;
 
+  root_call_main = root_call_main_inserted(rootp);
+
   printf("\n------\nAST is \n");
-  print_ast(0, rootp);
+  print_ast(0, root_call_main);
   printf("------\nstart interpret .. \n");
 
-  dp = do_interpret(rootp);
+  dp = do_interpret(root_call_main);
 
   printf("\nresult is %s\n" ,value_description(dp));
 }

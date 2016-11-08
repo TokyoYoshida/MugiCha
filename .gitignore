@@ -1,6 +1,12 @@
 y.tab.c
-y.tab.h
-ast.yy.c
-mugicha
-my_support
 
+*.bc
+*.ll
+y.tab.h
+lex.yy.c
+ast.yy.c
+*.o
+*.d
+mugicha
+mugicha_exec
+my_support

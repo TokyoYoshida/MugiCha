@@ -17,6 +17,9 @@ typedef struct _ASTNODE {
     struct _ASTNODE *condition;
 } ASTNODE;
 
+#ifdef __cplusplus
+extern "C" {
+#endif /* __cplusplus */
 ASTNODE *make_ast_int(int val);
 ASTNODE *make_ast_bool(BOOL val);
 ASTNODE *make_ast_double(double val);
@@ -40,6 +43,9 @@ void print_astnode(int depth, ASTNODE *np);
 void print_astnodeln(int depth, ASTNODE *np);
 void print_ast(int depth, ASTNODE *np);
 
+#ifdef __cplusplus
+}
+#endif /* __cplusplus */
 
 
 #endif

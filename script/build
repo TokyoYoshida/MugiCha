@@ -1,3 +1,3 @@
-lex mugicha.l
-yacc -d mugicha.y
-gcc -Wimplicit-function-declaration y.tab.c lex.yy.c mugicha.c stack.c type.c ast.c eval.c symbol.c var.c  env.c func.c -ly -ll -o mugicha
+lex src/mugicha.l
+yacc -d src/mugicha.y
+gcc -Wimplicit-function-declaration src/y.tab.c src/lex.yy.c src/mugicha.c src/stack.c src/type.c src/ast.c src/eval.c src/symbol.c src/var.c  src/env.c src/func.c -ly -ll -o mugicha

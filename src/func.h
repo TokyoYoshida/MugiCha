@@ -20,9 +20,17 @@ typedef struct _FUNCRESULT {
   void *retvalue;
 } FUNCRESULT;
 
+#ifdef __cplusplus
+extern "C" {
+#endif /* __cplusplus */
+
 void set_func_pos(int newpos);
 int get_func_pos();
 FUNC *lookup_func(SYMBOL *s);
 FUNC *make_func(SYMBOL *s, TYPE type, ASTNODE *def, ASTNODE *body, ASTNODE *def_args);
+
+#ifdef __cplusplus
+}
+#endif /* __cplusplus */
 
 #endif

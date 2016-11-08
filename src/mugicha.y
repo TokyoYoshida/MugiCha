@@ -3,7 +3,10 @@
 #include <stdlib.h>
 #include "mugicha.h"
 #include "support.h"
+#include "llvm_builder.h"
 #define YYDEBUG 1
+
+static enum MugichaMode mugichaMode;
 
 %}
 %union {
@@ -33,7 +36,11 @@ prog
     : /* empty */
     | stmt
     {
-    mugicha_main($1);
+      if( mugichaMode == Interpreter){
+        mugicha_main($1);
+      } else {
+        mugicha_compile($1);
+      }
     }
     ;
 stmt
@@ -41,24 +48,20 @@ stmt
     | def_var
     | set_var
     | def_func
-    | call_func
     | if_stmt
     | while_stmt
     | stmt stmt
     {
-    DEBUGL;
       $$ = make_ast_op(SEQ, $1, $2);
     }
     ;
 def_func
     : FUNCTION NAME '(' def_var ')' TYPE_LITERAL '{' stmt '}'
     {
-    DEBUGL;
     $$ = make_ast_def_func($2, $4, $6, $8);
     }
     | FUNCTION NAME '(' ')' TYPE_LITERAL '{' stmt '}'
     {
-    DEBUGL;
     $$ = make_ast_def_func($2, NULL, $5, $7);
     }
     ;
@@ -81,9 +84,9 @@ if_stmt
     }
     ;
 while_stmt
-    : WHILE '(' expr_bool ')' '{' stmt '}'
+    : WHILE expr_bool '{' stmt '}'
     {
-    $$ = make_ast_while($3, $6 );
+    $$ = make_ast_while($2, $4 );
     }
     ;
 expr
@@ -92,16 +95,31 @@ expr
     | expr_bool
     | expr_double
     | expr_string
+    | call_func
+    | expr '+' expr
+    {
+      $$ = make_ast_op(ADD, $1, $3);
+    }
+    | expr '-' expr
+    {
+      $$ = make_ast_op(SUB, $1, $3);
+    }
+    | expr '*' expr
+    {
+      $$ = make_ast_op(MUL, $1, $3);
+    }
+    | expr '/' expr
+    {
+      $$ = make_ast_op(DIV, $1, $3);
+    }
     ;
 call_func
     : NAME '(' set_var ')'
     {
-    DEBUGL;
     $$ = make_ast_call_func($1, $3);
     }
     | NAME '(' ')'
     {
-    DEBUGL;
     $$ = make_ast_call_func($1, NULL);
     }
     ;
@@ -274,14 +292,24 @@ yyerror(char const *str)
     return 0;
 }
 
-int main(void)
+int main(int argc,char *argv[])
 {
     extern int yyparse(void);
     extern FILE *yyin;
+
+    if(argc > 1){
+      if(!strcmp(argv[1],"i")){
+        mugichaMode = Interpreter;
+      } else if(!strcmp(argv[1],"c")){
+        mugichaMode = Compiler;
+      }
+    }
 
     yyin = stdin;
     if (yyparse()) {
         fprintf(stderr, "Symtax Error\n");
         exit(1);
     }
+
+    return 0;
 }

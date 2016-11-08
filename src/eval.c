@@ -139,6 +139,7 @@ VALUE  exec_seq(ASTNODE *ap)
 
   return rhs;
 }
+
 VALUE exec_def_func(ASTNODE *ap)
 {
   VALUE ret;
@@ -158,8 +159,10 @@ VALUE exec_call_func(ASTNODE *ap)
 
   f = lookup_func(ap->sym);
 
-  eval_node(f->def_args);
-  eval_node(ap->set_args);
+  if( ap->set_args != NULL){
+    eval_node(f->def_args);
+    eval_node(ap->set_args);
+  }
   ret = eval_node(f->body);
 
   pop_env();

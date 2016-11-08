@@ -23,6 +23,10 @@ typedef struct _VALUE {
 
 #define STRING_LENGTH_MAX 255
 
+#ifdef __cplusplus
+extern "C" {
+#endif /* __cplusplus */
+
 char *value_description(VALUE val);
 char *get_type_description(TYPE i);
 char *get_op_description(OPERATION i);
@@ -33,5 +37,8 @@ double cast_double(VALUE v);
 int cast_int(VALUE v);
 BOOL cast_bool(VALUE v);
 
+#ifdef __cplusplus
+}
+#endif /* __cplusplus */
 
 #endif

@@ -1,0 +1,12 @@
+func myfunc(var x int) int {
+  if x > 1000 {
+    print("good")
+  } else {
+    print("ok")
+  }
+}
+
+func main() int {
+  myfunc(x = 100)
+  0
+}
