@@ -34,14 +34,14 @@ make
 
 run the following command.
 
-### for interpreter
-```
-make run_interpreter
-```
-
 ### for compiler
 ```
 make run_compiler
+```
+
+### for interpreter(deprecated)
+```
+make run_interpreter
 ```
 
 ## contribution
