@@ -76,6 +76,8 @@ ASTNODE *make_ast_bool(BOOL val)
   ASTNODE *np;
   int *vp;
 
+  np = make_astnode();
+
   np->op    = VALUEDATA;
   np->val.type  = BOOLTYPE;
   np->val.val.b = val;
@@ -175,9 +177,9 @@ ASTNODE *make_ast_call_func(char *name, ASTNODE *set_args)
     f = lookup_func(np->sym);
     np->set_args       = set_args;
 
-    printf("call func symbol = %s",symbol_description(np->sym));
+    // printf("call func symbol = %s",symbol_description(np->sym));
 
-    print_astnodeln(0, np);
+    // print_astnodeln(0, np);
 
 
     return np;
@@ -198,9 +200,9 @@ ASTNODE *make_ast_def_func(char *name, ASTNODE *def_args, TYPE type, ASTNODE *bo
 
     make_func(np->sym, type, np, body, def_args);
 
-    printf("symbol = %s",symbol_description(np->sym));
+    // printf("symbol = %s",symbol_description(np->sym));
 
-    print_astnodeln(0, np);
+    // print_astnodeln(0, np);
 
 
 
@@ -220,9 +222,9 @@ ASTNODE *make_ast_def_var(char *name, TYPE type)
     np->left       = NULL;
     np->right      = NULL;
 
-    printf("symbol = %s",symbol_description(np->sym));
+    // printf("symbol = %s",symbol_description(np->sym));
 
-    print_astnodeln(0, np);
+    // print_astnodeln(0, np);
 
     return np;
 }
@@ -243,9 +245,9 @@ ASTNODE *make_ast_set_var(char *name, ASTNODE *newval)
     np->left       = newval;
     np->right      = NULL;
 
-    printf("symbol = %s",symbol_description(np->sym));
+    // printf("symbol = %s",symbol_description(np->sym));
 
-    print_astnodeln(0, np);
+    // print_astnodeln(0, np);
 
     return np;
 }

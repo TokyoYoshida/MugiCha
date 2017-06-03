@@ -1,0 +1,14 @@
+func test(var x int) int {
+  while x < 100 {
+    print(x)
+    x = x + 1
+  }
+  x
+}
+
+func main() int {
+  var x int
+  x = test(x = 0) + 1
+  print(x)
+  0
+}

@@ -282,6 +282,11 @@ primary_string
     ;
 primary_bool
     : BOOL_LITERAL
+    | NAME
+    {
+      $$ = make_ast_get_var($1);
+    }
+    ;
 %%
 
 int

@@ -102,9 +102,9 @@ void print_op(ASTNODE *np){
   sscanf(yytext, "%s", temp);
 
   if(!strcmp(temp, "true")){
-  bool = TRUE;
+    bool = TRUE;
   } else {
-  bool = FALSE;
+    bool = FALSE;
   }
 
   yylval.np = make_ast_bool(bool);

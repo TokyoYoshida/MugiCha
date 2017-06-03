@@ -99,13 +99,11 @@ std::shared_ptr<LLVMLocalVariableMap> MugichaScopeInfo::getVarMap()
   return var_map_;
 }
 
-
-
 llvm::Value *exec_def_var_codegen(ASTNODE *ap , std::shared_ptr<MugichaScopeInfo> scope)
 {
   auto expr = scope->makeExprBuilder();
 
-  scope->getVarMap()->makeVariable( ap->sym->name ,ap->type);
+  scope->getVarMap()->makeVariable(ap->sym->name ,ap->type);
 
   return expr->makeConst(-1); // TODO
 }
@@ -116,7 +114,7 @@ llvm::Value *exec_set_var_codegen(ASTNODE *ap , std::shared_ptr<MugichaScopeInfo
 
   auto ret = eval_node_codegen(ap->left, scope);
 
-  scope->getVarMap()->set( ap->sym->name ,ret);
+  scope->getVarMap()->set(ap->sym->name ,ret);
 
   return ret;
 }
@@ -239,11 +237,17 @@ llvm::Value *exec_def_func_codegen(ASTNODE *ap, std::shared_ptr<MugichaScopeInfo
   if( defArgs ){
     switch(defArgs->type){
       case INT:
+      case BOOLTYPE:
         argTypes.push_back(llvm::Type::getInt32Ty(*context));
         break;
-      break;
-      default: // TODO
-      break;
+      case DOUBLE:
+        argTypes.push_back(llvm::Type::getDoubleTy(*context));
+        break;
+      case STRING:
+        argTypes.push_back(llvm::Type::getInt8PtrTy(*context));
+        break;
+      default:
+        ASSERT_FAIL_BLOCK();
     }
   }
 
@@ -292,7 +296,20 @@ llvm::Value *exec_call_func_codegen(ASTNODE *ap, std::shared_ptr<MugichaScopeInf
 
   auto defArgs = funcInfo->def_args;
   if( defArgs ){
-    argTypes.push_back(llvm::Type::getInt32Ty(*module->getContext())); // TODO
+    switch(defArgs->type){
+      case INT:
+      case BOOLTYPE:
+        argTypes.push_back(llvm::Type::getInt32Ty(*module->getContext()));
+        break;
+      case DOUBLE:
+        argTypes.push_back(llvm::Type::getDoubleTy(*module->getContext()));
+        break;
+      case STRING:
+        argTypes.push_back(llvm::Type::getInt8PtrTy(*module->getContext()));
+        break;
+      default: // TODO
+        break;
+    }
   }
 
   if( ap->set_args ){ // TODO only single arg. multi arg requre.

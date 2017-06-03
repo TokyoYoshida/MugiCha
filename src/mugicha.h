@@ -7,6 +7,8 @@
 
 enum MugichaMode {Interpreter, Compiler};
 
+// #define DEBUG 1
+
 void interpreter_main(ASTNODE *rootp);
 void mugicha_main(ASTNODE *rootp);
 void cleanup_astnodes(ASTNODE *np);

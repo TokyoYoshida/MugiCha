@@ -1,5 +1,4 @@
 y.tab.c
-
 *.bc
 *.ll
 y.tab.h
@@ -10,3 +9,4 @@ ast.yy.c
 mugicha
 mugicha_exec
 my_support
+.tags*
