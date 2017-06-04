@@ -10,3 +10,6 @@ mugicha
 mugicha_exec
 my_support
 .tags*
+tmp
+*.result
+*.diff

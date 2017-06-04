@@ -7,7 +7,10 @@
 #define YYDEBUG 1
 
 static enum MugichaMode mugichaMode;
+
+#ifdef DEBUG
 int yydebug=1;
+#endif
 
 %}
 %union {
@@ -110,10 +113,6 @@ expr
     }
     | expr '*' expr
     {
-      DEBUGL;
-      print_astnodeln(1,$1); // 🌋DEBUG🐠
-      print_astnodeln(1,$3); // 🌋DEBUG🐠
-      DEBUGL;
       $$ = make_ast_op(MUL, $1, $3);
     }
     | expr '/' expr
@@ -124,12 +123,10 @@ expr
 call_func
     : NAME '(' set_var ')'
     {
-    DEBUGL;
     $$ = make_ast_call_func($1, $3);
     }
     | NAME '(' ')'
     {
-    DEBUGL;
     $$ = make_ast_call_func($1, NULL);
     }
     ;
@@ -154,10 +151,6 @@ expr_int
     }
     | expr_int '*' expr_int
     {
-      DEBUGL;
-      print_astnodeln(1,$1); // 🌋DEBUG🐠
-      print_astnodeln(1,$3); // 🌋DEBUG🐠
-      DEBUGL;
       $$ = make_ast_op(MUL, $1, $3);
     }
     | expr_int '/' expr_int
@@ -264,7 +257,6 @@ primary_bool
 primary_get_variable
     : NAME
     {
-      DEBUGL;
       $$ = make_ast_get_var($1);
     }
     ;
