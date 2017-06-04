@@ -3,8 +3,7 @@ func factorial(var x int) int {
   if x == 1 {
     ret = 1
   } else {
-    ret = factorial(x = x - 1)
-    ret = ret * x
+    ret = x * factorial(x = x - 1)
   }
   ret
 }

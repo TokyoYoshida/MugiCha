@@ -1,0 +1,1 @@
+./mugicha_exec c < $1 > tmp.bc && lli tmp.bc

@@ -12,6 +12,11 @@ CSRCS = $(wildcard src/*.c)
 CPPSRCS = $(wildcard src/*.cpp)
 OBJS = $(CSRCS:%.c=%.o) $(CPPSRCS:%.cpp=%.o) $(LEXO) $(YACCO)
 DEPS = $(CSRCS:%.c=%.d) $(CPPSRCS:%.cpp=%.d)
+MUGICHAC = script/mugichac
+TESTS = $(wildcard test/*.mugi)
+RESULTS = $(TESTS:%.mugi=%.result)
+EXPECTS = $(TESTS:%.mugi=%.expect)
+DIFFS = $(TESTS:%.mugi=%.diff)
 
 CC   = clang
 CPP  = clang++
@@ -40,7 +45,10 @@ $(LEXC): $(LEXS)
 	$(CPP) -c $(CPPFLG) -o $@ $<
 
 clean:
-	rm -f $(PROG) $(OBJS) $(DEPS) $(YACCO) $(LEXO) $(YACCC) $(LEXC) $(YACCH)
+	rm -f $(PROG) $(OBJS) $(DEPS) $(YACCO) $(LEXO) $(YACCC) $(LEXC) $(YACCH) $(RESULTS) $(DIFFS)
+
+clean_test:
+	rm -f $(EXPECTS)
 
 disp_ast:
 	./mugicha_exec a < sample.mugi
@@ -49,4 +57,16 @@ run_interpreter:
 	./mugicha_exec i < sample.mugi
 
 run_compiler:
-	./mugicha_exec c < sample.mugi > sample.bc && lli sample.bc
+	$(MUGICHAC) sample.mugi
+
+test: $(DIFFS)
+	echo "The test is successful."
+
+%.diff: %.result %.expect
+	diff $(basename $<).result $(basename $<).expect > $@
+
+$(RESULTS): $(TESTS)
+	$(MUGICHAC) $< > $@
+
+$(EXPECTS): $(TESTS)
+	$(MUGICHAC) $< > $@
