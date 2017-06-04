@@ -112,12 +112,13 @@ void print_op(ASTNODE *np){
 
   return BOOL_LITERAL;
 }
-[a-zA-Z]+[a-zA-Z0-9]* {
+[a-zA-Z][a-zA-Z0-9]* {
   char temp[VAR_NAME_MAX];
 
   sscanf(yytext, "%s", temp);
 
   yylval.str =  strdup(temp);
+  DEBUGS(temp);
 
   return NAME;
 }

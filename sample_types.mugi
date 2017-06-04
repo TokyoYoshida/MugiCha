@@ -1,0 +1,27 @@
+func intfunc(var x int) int {
+  print(x)
+  0
+}
+
+func doublefunc(var x double) int {
+  print(x)
+  0
+}
+
+func strfunc(var x string) int {
+  print(x)
+  0
+}
+
+func boolfunc(var x bool) int {
+  print(x)
+  0
+}
+
+func main() int {
+  intfunc(x = 2)
+  doublefunc(x = 100.1)
+  strfunc(x = "this is test")
+  boolfunc(x = true)
+  0
+}

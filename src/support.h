@@ -15,10 +15,10 @@
 #else
 
 #define DEBUGL  ((void)0)
-#define DEBUGP  ((void)0)
-#define DEBUGS  ((void)0)
-#define DEBUGI  ((void)0)
-#define DEBUGW  ((void)0)
+#define DEBUGP(p)  ((void)0)
+#define DEBUGS(m)  ((void)0)
+#define DEBUGI(i)  ((void)0)
+#define DEBUGW(m)  ((void)0)
 
 #endif
 

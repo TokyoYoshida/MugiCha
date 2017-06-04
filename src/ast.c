@@ -110,7 +110,7 @@ ASTNODE *make_ast_get_var(char *name)
 
     np = make_astnode();
 
-    np->type       = ANY;
+    np->type       = ANY;// TODO ここで型情報を設定しておくとあとで型の不整合エラーをチェックできるかもしれない
     np->op         = GET_VAL;
     np->sym        = lookup_symbol(name);
     np->left       = NULL;
