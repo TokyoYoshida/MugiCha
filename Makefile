@@ -28,7 +28,7 @@ $(PROG): $(OBJS)
 	$(CPP) $(LDFLG) -o $(PROG) $^
 
 $(YACCC): $(YACCS)
-	$(YACC) $< -o $(YACCC) -d
+	$(YACC) $< -o $(YACCC) -d -t
 
 $(LEXC): $(LEXS)
 	$(LEX) -t $< > $(LEXC)
@@ -41,6 +41,9 @@ $(LEXC): $(LEXS)
 
 clean:
 	rm -f $(PROG) $(OBJS) $(DEPS) $(YACCO) $(LEXO) $(YACCC) $(LEXC) $(YACCH)
+
+disp_ast:
+	./mugicha_exec a < sample.mugi
 
 run_interpreter:
 	./mugicha_exec i < sample.mugi

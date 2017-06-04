@@ -7,6 +7,7 @@
 #define YYDEBUG 1
 
 static enum MugichaMode mugichaMode;
+int yydebug=1;
 
 %}
 %union {
@@ -14,16 +15,16 @@ static enum MugichaMode mugichaMode;
     char *str;
     int type;
 }
-%token <np>      DOUBLE_LITERAL INT_LITERAL BOOL_LITERAL
-%token <str>     NAME STRING_LITERAL
+%token <np>      DOUBLE_LITERAL INT_LITERAL BOOL_LITERAL STRING_LITERAL
+%token <str>     NAME
 %token <type>    TYPE_LITERAL
 %token '+' '-' '*' '/' '\n' '(' ')' '=' EQUAL PRINT VAR FUNCTION NOTEQUAL '!' '<' '>' '\"'
 %token SMALLEREQUAL GREATEREQUAL IF ELSE WHILE
-%type <np> prog stmt expr expr_int primary_int expr_print def_var set_var
+%type <np> prog stmt expr expr_print def_var set_var
 %type <np> def_func call_func primary_bool expr_cmp_eq expr_cmp_noteq
 %type <np> expr_cmp_greater expr_cmp_smaller expr_cmp_greaterequal expr_cmp_smallerequal
 %type <np> if_stmt expr_bool while_stmt primary_double expr_double primary_string
-%type <np> expr_string
+%type <np> expr_string expr_int primary_int primary_get_variable
 %left '+' '-'
 %left '*' '/'
 %left EQUAL NOTEQUAL '!' '<' '>' SMALLEREQUAL GREATEREQUAL
@@ -38,8 +39,10 @@ prog
     {
       if( mugichaMode == Interpreter){
         mugicha_main($1);
-      } else {
+      } else if( mugichaMode == Compiler){
         mugicha_compile($1);
+      } else if( mugichaMode == DisplayAst){
+        display_ast($1);
       }
     }
     ;
@@ -96,6 +99,7 @@ expr
     | expr_double
     | expr_string
     | call_func
+    | primary_get_variable
     | expr '+' expr
     {
       $$ = make_ast_op(ADD, $1, $3);
@@ -106,6 +110,10 @@ expr
     }
     | expr '*' expr
     {
+      DEBUGL;
+      print_astnodeln(1,$1); // 🌋DEBUG🐠
+      print_astnodeln(1,$3); // 🌋DEBUG🐠
+      DEBUGL;
       $$ = make_ast_op(MUL, $1, $3);
     }
     | expr '/' expr
@@ -116,10 +124,12 @@ expr
 call_func
     : NAME '(' set_var ')'
     {
+    DEBUGL;
     $$ = make_ast_call_func($1, $3);
     }
     | NAME '(' ')'
     {
+    DEBUGL;
     $$ = make_ast_call_func($1, NULL);
     }
     ;
@@ -144,6 +154,10 @@ expr_int
     }
     | expr_int '*' expr_int
     {
+      DEBUGL;
+      print_astnodeln(1,$1); // 🌋DEBUG🐠
+      print_astnodeln(1,$3); // 🌋DEBUG🐠
+      DEBUGL;
       $$ = make_ast_op(MUL, $1, $3);
     }
     | expr_int '/' expr_int
@@ -200,41 +214,25 @@ expr_bool
     | expr_cmp_smallerequal
     ;
 expr_cmp_eq
-    : primary_int EQUAL primary_int
-    {
-    $$ = make_ast_op(CMP_EQ, $1 ,$3);
-    }
-    | primary_bool EQUAL primary_bool
+    : expr EQUAL expr
     {
     $$ = make_ast_op(CMP_EQ, $1 ,$3);
     }
     ;
 expr_cmp_noteq
-    : primary_int NOTEQUAL primary_int
-    {
-    $$ = make_ast_op(CMP_NOTEQ, $1 ,$3);
-    }
-    | primary_bool NOTEQUAL primary_bool
+    : expr NOTEQUAL expr
     {
     $$ = make_ast_op(CMP_NOTEQ, $1 ,$3);
     }
     ;
 expr_cmp_greater
-    : primary_int '>' primary_int
-    {
-    $$ = make_ast_op(CMP_GREATER, $1 ,$3);
-    }
-    | primary_bool '>' primary_bool
+    : expr '>' expr
     {
     $$ = make_ast_op(CMP_GREATER, $1 ,$3);
     }
     ;
 expr_cmp_smaller
-    : primary_int '<' primary_int
-    {
-    $$ = make_ast_op(CMP_SMALLER, $1 ,$3);
-    }
-    | primary_bool '<' primary_bool
+    : expr '<' expr
     {
     $$ = make_ast_op(CMP_SMALLER, $1 ,$3);
     }
@@ -244,46 +242,29 @@ expr_cmp_greaterequal
     {
     $$ = make_ast_op(CMP_GREATEREQ, $1 ,$3);
     }
-    | primary_bool GREATEREQUAL primary_bool
-    {
-    $$ = make_ast_op(CMP_GREATEREQ, $1 ,$3);
-    }
     ;
 expr_cmp_smallerequal
     : primary_int SMALLEREQUAL primary_int
     {
     $$ = make_ast_op(CMP_SMALLEREQ, $1 ,$3);
     }
-    | primary_bool SMALLEREQUAL primary_bool
-    {
-    $$ = make_ast_op(CMP_SMALLER, $1 ,$3);
-    }
     ;
 primary_int
     : INT_LITERAL
-    | NAME
-    {
-      $$ = make_ast_get_var($1);
-    }
     ;
 primary_double
     : DOUBLE_LITERAL
-    | NAME
-    {
-      $$ = make_ast_get_var($1);
-    }
     ;
 primary_string
     : STRING_LITERAL
-    | NAME
-    {
-      $$ = make_ast_get_var($1);
-    }
     ;
 primary_bool
     : BOOL_LITERAL
-    | NAME
+    ;
+primary_get_variable
+    : NAME
     {
+      DEBUGL;
       $$ = make_ast_get_var($1);
     }
     ;
@@ -307,6 +288,8 @@ int main(int argc,char *argv[])
         mugichaMode = Interpreter;
       } else if(!strcmp(argv[1],"c")){
         mugichaMode = Compiler;
+      } else if(!strcmp(argv[1],"a")){
+        mugichaMode = DisplayAst;
       }
     }
 

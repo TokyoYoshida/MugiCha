@@ -69,3 +69,14 @@ void mugicha_main(ASTNODE *rootp)
 
   printf("\nresult is %s\n" ,value_description(dp));
 }
+
+void display_ast(ASTNODE *rootp)
+{
+  ASTNODE *root_call_main;
+
+  root_call_main = root_call_main_inserted(rootp);
+
+  printf("\n------\nAST is \n");
+  print_ast(0, root_call_main);
+  printf("------\nstart interpret .. \n");
+}
