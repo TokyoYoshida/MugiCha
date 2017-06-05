@@ -38,6 +38,8 @@ public:
   std::shared_ptr<LLVMLocalVariableMap> getVarMap();
 };
 
+llvm::Type *getLLVMTypeByMugichaType(TYPE type,llvm::LLVMContext *context);
+
 llvm::Value *eval_node_codegen(ASTNODE *ap, std::shared_ptr<MugichaScopeInfo> scope);
 
 #endif /* __cplusplus */
