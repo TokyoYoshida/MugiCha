@@ -14,6 +14,7 @@ func retstring() string {
   "test"
 }
 
+
 func main() int {
   print(retint())
   print(retbool())

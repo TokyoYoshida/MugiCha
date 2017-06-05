@@ -47,8 +47,8 @@ $(LEXC): $(LEXS)
 clean:
 	rm -f $(PROG) $(OBJS) $(DEPS) $(YACCO) $(LEXO) $(YACCC) $(LEXC) $(YACCH) $(RESULTS) $(DIFFS)
 
-clean_test:
-	rm -f $(EXPECTS)
+clean_test_results:
+	rm -f $(RESULTS) $(DIFFS)
 
 disp_ast:
 	./mugicha_exec a < sample.mugi
@@ -65,8 +65,8 @@ test: $(DIFFS)
 %.diff: %.result %.expect
 	diff $(basename $<).result $(basename $<).expect > $@
 
-$(RESULTS): $(TESTS)
+%.result: %.mugi
 	$(MUGICHAC) $< > $@
 
-$(EXPECTS): $(TESTS)
-	$(MUGICHAC) $< > $@
+$(TESTS): $(PROG)
+	touch $@

@@ -45,6 +45,23 @@
 
 #include "llvm_builder.h"
 
+llvm::Type *getLLVMTypeByMugichaType(TYPE type,llvm::LLVMContext *context) {
+  switch(type){
+    case INT:
+    case BOOLTYPE:
+      return llvm::Type::getInt32Ty(*context);
+      break;
+    case DOUBLE:
+      return llvm::Type::getDoubleTy(*context);
+      break;
+    case STRING:
+      return llvm::Type::getInt8PtrTy(*context);
+      break;
+    default:
+      ASSERT_FAIL_BLOCK();
+  }
+}
+
 MugichaScopeInfo::MugichaScopeInfo() {
   context_ = std::make_shared<llvm::LLVMContext>();
   module_ = std::make_shared<LLVMModuleBuilder>("mugicha", context_);
@@ -235,24 +252,13 @@ llvm::Value *exec_def_func_codegen(ASTNODE *ap, std::shared_ptr<MugichaScopeInfo
 
   auto defArgs = funcInfo->def_args;
   if( defArgs ){
-    switch(defArgs->type){
-      case INT:
-      case BOOLTYPE:
-        argTypes.push_back(llvm::Type::getInt32Ty(*context));
-        break;
-      case DOUBLE:
-        argTypes.push_back(llvm::Type::getDoubleTy(*context));
-        break;
-      case STRING:
-        argTypes.push_back(llvm::Type::getInt8PtrTy(*context));
-        break;
-      default:
-        ASSERT_FAIL_BLOCK();
-    }
+    auto argType = getLLVMTypeByMugichaType(defArgs->type, context);
+    argTypes.push_back(argType);
   }
 
+  auto retType = getLLVMTypeByMugichaType(funcInfo->type, context);
   auto func_type =
-    llvm::FunctionType::get(llvm::Type::getInt32Ty(*context), argTypes, false); // TODO return type
+    llvm::FunctionType::get(retType, argTypes, false);
 
   auto func = std::make_shared<LLVMFuncBuilder>(new_scope->getModuleBuilder(), func_type, funcInfo->sym->name);
 
@@ -292,24 +298,13 @@ llvm::Value *exec_call_func_codegen(ASTNODE *ap, std::shared_ptr<MugichaScopeInf
   std::vector<llvm::Value *> argValues;
   std::vector<llvm::Type *> argTypes;
 
+  auto context = module->getContext();
   auto funcInfo = lookup_func(ap->sym);
 
   auto defArgs = funcInfo->def_args;
   if( defArgs ){
-    switch(defArgs->type){
-      case INT:
-      case BOOLTYPE:
-        argTypes.push_back(llvm::Type::getInt32Ty(*module->getContext()));
-        break;
-      case DOUBLE:
-        argTypes.push_back(llvm::Type::getDoubleTy(*module->getContext()));
-        break;
-      case STRING:
-        argTypes.push_back(llvm::Type::getInt8PtrTy(*module->getContext()));
-        break;
-      default: // TODO
-        break;
-    }
+    auto argType = getLLVMTypeByMugichaType(defArgs->type,context);
+    argTypes.push_back(argType);
   }
 
   if( ap->set_args ){ // TODO only single arg. multi arg requre.
@@ -317,8 +312,9 @@ llvm::Value *exec_call_func_codegen(ASTNODE *ap, std::shared_ptr<MugichaScopeInf
     argValues.push_back(setValue);
   }
 
+  auto retType = getLLVMTypeByMugichaType(funcInfo->type, context);
   llvm::FunctionType *funcType =
-    llvm::FunctionType::get(module->getBuilder()->getInt32Ty(), argTypes, true);
+    llvm::FunctionType::get(retType, argTypes, true);
   llvm::Constant *callFunc =
     module->getModule()->getOrInsertFunction(funcInfo->sym->name, funcType);
 
