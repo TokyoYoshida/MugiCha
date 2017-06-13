@@ -6,11 +6,11 @@
 
 #ifdef DEBUG
 
-#define DEBUGL     printf("%s:%d\n",__FILE__,__LINE__)
-#define DEBUGP(p)  printf("%s:%d addr = %p\n",__FILE__, __LINE__, p)
-#define DEBUGS(m)  printf("%s:%d message = %s\n",__FILE__, __LINE__, m)
-#define DEBUGI(i)  printf("%s:%d int data = %d\n",__FILE__, __LINE__, i)
-#define DEBUGW(m)  printf("%s:%d label = %s",__FILE__, __LINE__, m)
+#define DEBUGL     fprintf(stderr, "%s:%d\n",__FILE__,__LINE__)
+#define DEBUGP(p)  fprintf(stderr, "%s:%d addr = %p\n",__FILE__, __LINE__, p)
+#define DEBUGS(m)  fprintf(stderr, "%s:%d message = %s\n",__FILE__, __LINE__, m)
+#define DEBUGI(i)  fprintf(stderr, "%s:%d int data = %d\n",__FILE__, __LINE__, i)
+#define DEBUGW(m)  fprintf(stderr, "%s:%d label = %s",__FILE__, __LINE__, m)
 
 #else
 

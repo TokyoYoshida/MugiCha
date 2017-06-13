@@ -209,18 +209,30 @@ llvm::Value *LLVMLocalVariable::get(){
   return module_->getBuilder()->CreateLoad(value_);
 }
 
-LLVMLocalVariableMap::LLVMLocalVariableMap(std::shared_ptr<LLVMModuleBuilder> module){
+LLVMVariableMap::LLVMVariableMap(std::shared_ptr<LLVMModuleBuilder> module){
   module_ = module;
+}
+
+void LLVMVariableMap::set(std::string name, llvm::Value *newVal){
+  map[name]->set(newVal);
+}
+
+llvm::Value *LLVMVariableMap::get(std::string name){
+  return map[name]->get();
+}
+
+LLVMLocalVariableMap::LLVMLocalVariableMap(std::shared_ptr<LLVMModuleBuilder> module) : LLVMVariableMap(module){
+
 }
 
 void LLVMLocalVariableMap::makeVariable(std::string name ,TYPE type){
   map[name] = new LLVMLocalVariable(module_, name, type);
 }
 
-void LLVMLocalVariableMap::set(std::string name, llvm::Value *newVal){
-  map[name]->set(newVal);
-}
+LLVMStruct::LLVMStruct(std::shared_ptr<LLVMModuleBuilder> module, std::string name, std::shared_ptr<LLVMLocalVariableMap> varmap)
+{
+  module_ = module;
+  varmap_ = varmap;
 
-llvm::Value *LLVMLocalVariableMap::get(std::string name){
-  return map[name]->get();
+  // TODO make this constructor
 }

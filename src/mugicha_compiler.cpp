@@ -161,11 +161,13 @@ llvm::Value *exec_calc_codegen(ASTNODE *ap,OPERATION calc_mode , std::shared_ptr
 
   auto type = lhs->getType();
   switch(calc_mode){
-    case ADD: // TODO String ready
+    case ADD:
       if(type->isIntegerTy()){
         ops = llvm::Instruction::Add;
       } else if(type->isDoubleTy()){
         ops = llvm::Instruction::FAdd;
+      } else if(type->isPointerTy()){
+        ASSERT_FAIL_BLOCK(); // TODO String Ready
       } else {
         ASSERT_FAIL_BLOCK();
       }
@@ -321,6 +323,13 @@ llvm::Value *exec_call_func_codegen(ASTNODE *ap, std::shared_ptr<MugichaScopeInf
   auto ret = module->getBuilder()->CreateCall(callFunc, argValues);
 
   return ret;
+}
+
+llvm::Value *exec_def_class_codegen(ASTNODE *ap, std::shared_ptr<MugichaScopeInfo> old_scope)
+{
+  // TODO make this function
+  // auto vals = eval_def_vars(ap->def_vars);
+
 }
 
 llvm::Value *exec_seq_codegen(ASTNODE *ap, std::shared_ptr<MugichaScopeInfo> scope)
@@ -480,16 +489,18 @@ llvm::Value *eval_node_op_codegen(ASTNODE *ap, std::shared_ptr<MugichaScopeInfo>
       return exec_cmp_codegen(ap, ap->op, scope);
     case PRINTDATA:
       return exec_print_codegen(ap, scope);
-    case DEF_VAL:
+    case DEF_VAR:
       return exec_def_var_codegen(ap, scope);
-    case SET_VAL:
+    case SET_VAR:
       return exec_set_var_codegen(ap, scope);
-    case GET_VAL:
+    case GET_VAR:
       return exec_get_var_codegen(ap, scope);
     case DEF_FUNC:
     return exec_def_func_codegen(ap ,scope);
     case CALL_FUNC:
     return exec_call_func_codegen(ap, scope);
+    case DEF_CLASS:
+    return exec_def_class_codegen(ap ,scope);
     case IF_STMT:
     return exec_if_codegen(ap, scope);
     case WHILE_STMT:

@@ -71,19 +71,34 @@ class LLVMLocalVariable {
   llvm::Value *get();
 };
 
-class LLVMLocalVariableMap {
+class LLVMVariableMap {
   public:
   std::shared_ptr<LLVMModuleBuilder> module_;
   std::map<std::string, LLVMLocalVariable *> map;
 
-  LLVMLocalVariableMap(std::shared_ptr<LLVMModuleBuilder> module);
+  LLVMVariableMap(std::shared_ptr<LLVMModuleBuilder> module);
 
-  void makeVariable(std::string name ,TYPE type);
+  virtual void makeVariable(std::string name ,TYPE type) = 0;
 
   void set(std::string name, llvm::Value *newVal);
 
   llvm::Value *get(std::string name);
 
+};
+
+class LLVMLocalVariableMap : public LLVMVariableMap {
+  public:
+  LLVMLocalVariableMap(std::shared_ptr<LLVMModuleBuilder> module);
+
+  virtual void makeVariable(std::string name ,TYPE type);
+};
+
+class LLVMStruct {
+  std::shared_ptr<LLVMModuleBuilder> module_;
+  std::shared_ptr<LLVMLocalVariableMap> varmap_;
+
+  public:
+  LLVMStruct(std::shared_ptr<LLVMModuleBuilder> module, std::string name, std::shared_ptr<LLVMLocalVariableMap> varmap);
 };
 
 llvm::Value *makePrintf(std::shared_ptr<LLVMModuleBuilder> module,std::shared_ptr<LLVMExprBuilder> builder, std::string printStr); // TODO delete lator

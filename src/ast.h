@@ -15,6 +15,8 @@ typedef struct _ASTNODE {
     struct _ASTNODE *right;
     struct _ASTNODE *set_args;
     struct _ASTNODE *condition;
+    struct _ASTNODE *def_vars;
+    struct _ASTNODE *def_funcs;
 } ASTNODE;
 
 #ifdef __cplusplus
@@ -35,6 +37,8 @@ ASTNODE *make_ast_def_var(char *name, TYPE type);
 ASTNODE *make_ast_set_var(char *name, ASTNODE *rhr);
 ASTNODE *make_ast_get_var(char *name);
 ASTNODE *make_ast_def_func(char *name, ASTNODE *def_args, TYPE type, ASTNODE *body);
+ASTNODE *make_ast_def_class(char *name, ASTNODE *def_vars,ASTNODE *def_funcs);
+
 ASTNODE *make_ast_call_func(char *name, ASTNODE *set_args);
 ASTNODE *make_ast_if(ASTNODE *cond, ASTNODE *then_stmt, ASTNODE *else_stmt);
 ASTNODE *make_ast_while(ASTNODE *cond, ASTNODE *loop_stmt);
