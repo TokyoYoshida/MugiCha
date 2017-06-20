@@ -42,6 +42,7 @@ void print_op(ASTNODE *np){
 ")"		return ')';
 "{"		return '{';
 "}"		return '}';
+"."		return '.';
 "="		return '=';
 "=="	return EQUAL;
 "!="	return NOTEQUAL;
@@ -88,14 +89,6 @@ void print_op(ASTNODE *np){
     return INT_LITERAL;
   }
   ASSERT_FAIL_BLOCK();
-}
-(int|double|bool|string) {
-  char temp[7];
-  sscanf(yytext, "%s", temp);
-
-  yylval.type = get_type_by_name(temp);
-
-  return TYPE_LITERAL;
 }
 (true|false) {
   char temp[7];

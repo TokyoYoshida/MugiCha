@@ -12,6 +12,13 @@
 #define DEBUGI(i)  fprintf(stderr, "%s:%d int data = %d\n",__FILE__, __LINE__, i)
 #define DEBUGW(m)  fprintf(stderr, "%s:%d label = %s",__FILE__, __LINE__, m)
 
+// Use for temporary work only
+#define TMP_DEBUGL     fprintf(stderr, "%s:%d\n",__FILE__,__LINE__)
+#define TMP_DEBUGP(p)  fprintf(stderr, "%s:%d addr = %p\n",__FILE__, __LINE__, p)
+#define TMP_DEBUGS(m)  fprintf(stderr, "%s:%d message = %s\n",__FILE__, __LINE__, m)
+#define TMP_DEBUGI(i)  fprintf(stderr, "%s:%d int data = %d\n",__FILE__, __LINE__, i)
+#define TMP_DEBUGW(m)  fprintf(stderr, "%s:%d label = %s",__FILE__, __LINE__, m)
+
 #else
 
 #define DEBUGL  ((void)0)

@@ -11,6 +11,8 @@ typedef struct _ASTNODE {
     OPERATION     op;
     VALUE         val;
     SYMBOL        *sym;
+    SYMBOL        *klass;
+    SYMBOL        *member;
     struct _ASTNODE *left;
     struct _ASTNODE *right;
     struct _ASTNODE *set_args;
@@ -33,10 +35,11 @@ ASTNODE *make_astnode();
 
 ASTNODE *make_ast_op(OPERATION op, ASTNODE *lhr, ASTNODE *rhr);
 ASTNODE *make_ast_cmd(OPERATION op, ASTNODE *argp);
-ASTNODE *make_ast_def_var(char *name, TYPE type);
+ASTNODE *make_ast_def_var(char *name, char *type_name);
 ASTNODE *make_ast_set_var(char *name, ASTNODE *rhr);
+ASTNODE *make_ast_set_member_var(char *var_name, char *member_name, ASTNODE *newval);
 ASTNODE *make_ast_get_var(char *name);
-ASTNODE *make_ast_def_func(char *name, ASTNODE *def_args, TYPE type, ASTNODE *body);
+ASTNODE *make_ast_def_func(char *name, ASTNODE *def_args, char *type_name, ASTNODE *body);
 ASTNODE *make_ast_def_class(char *name, ASTNODE *def_vars,ASTNODE *def_funcs);
 
 ASTNODE *make_ast_call_func(char *name, ASTNODE *set_args);

@@ -60,6 +60,8 @@ TYPE get_type_by_name(char *name)
     return BOOLTYPE;
   } else if (!strcmp(name,"string")){
     return STRING;
+  } else if (lookup_symbol(name)){
+    return KLASS;
   }
   ASSERT_FAIL("this block expect never call.");
 }
