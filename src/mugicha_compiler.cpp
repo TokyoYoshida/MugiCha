@@ -152,7 +152,11 @@ llvm::Value *exec_set_var_codegen(ASTNODE *ap , std::shared_ptr<MugichaScopeInfo
 
   auto ret = eval_node_codegen(ap->left, scope);
 
+<<<<<<< HEAD
   auto target = VariableIndicator(ap->sym->name);
+=======
+  auto target = new VariableIndicator(ap->sym->name);
+>>>>>>> make-class-update
   scope->getVarMap()->set(target ,ret);
 
   return ret;
@@ -162,7 +166,11 @@ llvm::Value *exec_get_var_codegen(ASTNODE *ap , std::shared_ptr<MugichaScopeInfo
 {
   auto expr = scope->makeExprBuilder();
 
+<<<<<<< HEAD
   auto target = VariableIndicator(ap->sym->name);
+=======
+  auto target = new VariableIndicator(ap->sym->name);
+>>>>>>> make-class-update
   auto ret = scope->getVarMap()->get(target);
 
   return ret;
@@ -293,7 +301,11 @@ llvm::Value *exec_def_func_codegen(ASTNODE *ap, std::shared_ptr<MugichaScopeInfo
   if( defArgs ){
     auto argName =defArgs->sym->name;
     varMap->makeVariable(argName, defArgs->type);
+<<<<<<< HEAD
     auto target = VariableIndicator(argName);
+=======
+    auto target = new VariableIndicator(argName); // TODO this memory needs free after process
+>>>>>>> make-class-update
     varMap->set(target,argVal);
   }
 
@@ -385,9 +397,14 @@ llvm::Value *exec_set_member_var_codegen(ASTNODE *ap , std::shared_ptr<MugichaSc
 
   auto ret = eval_node_codegen(ap->left, scope);
 
+<<<<<<< HEAD
   // ASSERT_FAIL("under constructioin"); // TODO make-class-update
   // auto target = VariableIndicator(ap->sym->name);
   // scope->getVarMap()->set(target ,ret);
+=======
+  auto target = (VariableIndicator *)new StructIndicator(ap->sym->name, ap->member->name);
+  scope->getVarMap()->set(target, ret);
+>>>>>>> make-class-update
 
   return ret;
 }

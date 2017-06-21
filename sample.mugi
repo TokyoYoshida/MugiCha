@@ -4,6 +4,10 @@ func main() int {
     var x int
   }
   var y TestX
+<<<<<<< HEAD
+=======
+  y.x = 100
+>>>>>>> make-class-update
   print("ok")
   0
 }

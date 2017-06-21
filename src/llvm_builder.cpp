@@ -283,12 +283,29 @@ LLVMStruct::LLVMStruct(std::shared_ptr<LLVMModuleBuilder> module,LLVMStructDef *
   struct_def_ = struct_def;
   TMP_DEBUGL;
   TMP_DEBUGP(struct_def);
+<<<<<<< HEAD
   auto newinst = new llvm::AllocaInst(struct_def->getStructTy());
   TMP_DEBUGL;
 }
 
 void LLVMStruct::set(std::string member_name, llvm::Value *newVal){
 
+=======
+  alloca_inst = new llvm::AllocaInst(struct_def->getStructTy());
+  TMP_DEBUGL;
+  auto iBuilder = module_->getBuilder();
+  auto block = iBuilder->GetInsertBlock();
+  block->getInstList().push_back(alloca_inst);
+}
+
+void LLVMStruct::set(std::string member_name, llvm::Value *newVal){
+  // ASSERT_FAIL("under construction");
+    auto iBuilder = module_->getBuilder();
+    auto structTy = struct_def_->getStructTy();
+    llvm::Type   *intTy  = llvm::Type::getInt32Ty(*module_->getContext());
+    auto store = iBuilder->CreateStore(llvm::ConstantInt::get(intTy, 10000), iBuilder->CreateStructGEP(structTy,alloca_inst, 0));
+    auto load = iBuilder->CreateLoad( iBuilder->CreateStructGEP(structTy,alloca_inst, 0));
+>>>>>>> make-class-update
 }
 
 llvm::Value *LLVMStruct::get(std::string member_name){
@@ -299,12 +316,21 @@ LLVMVariableMap::LLVMVariableMap(std::shared_ptr<LLVMModuleBuilder> module){
   module_ = module;
 }
 
+<<<<<<< HEAD
 void LLVMVariableMap::set(VariableIndicator target, llvm::Value *newVal){
   target.set(this, newVal);
 }
 
 llvm::Value *LLVMVariableMap::get(VariableIndicator target){
   return target.get(this);
+=======
+void LLVMVariableMap::set(VariableIndicator *target, llvm::Value *newVal){
+  target->set(this, newVal);
+}
+
+llvm::Value *LLVMVariableMap::get(VariableIndicator *target){
+  return target->get(this);
+>>>>>>> make-class-update
 }
 
 LLVMVariable *LLVMVariableMap::LLVMVariableMap::getVariable(std::string name){
