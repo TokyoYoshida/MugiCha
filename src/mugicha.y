@@ -8,7 +8,7 @@
 
 static enum MugichaMode mugichaMode;
 
-#ifdef DEBUG
+#ifdef YACC_DEBUG
 int yydebug=1;
 #endif
 
@@ -16,22 +16,23 @@ int yydebug=1;
 %union {
     struct _ASTNODE    *np;
     char *str;
-    int type;
 }
 %token <np>      DOUBLE_LITERAL INT_LITERAL BOOL_LITERAL STRING_LITERAL
 %token <str>     NAME
-%token <type>    TYPE_LITERAL
-%token '+' '-' '*' '/' '\n' '(' ')' '=' EQUAL PRINT VAR FUNCTION NOTEQUAL '!' '<' '>' '\"'
+%token '+' '-' '*' '/' '\n' '(' ')' '.' '=' EQUAL PRINT VAR FUNCTION CLASSDEF NOTEQUAL '!' '<' '>' '\"'
 %token SMALLEREQUAL GREATEREQUAL IF ELSE WHILE
-%type <np> prog stmt expr expr_print def_var set_var
+%type <np> prog stmt expr expr_print def_var set_var set_member_var
+%type <np> def_class def_vars def_funcs
 %type <np> def_func call_func primary_bool expr_cmp_eq expr_cmp_noteq
 %type <np> expr_cmp_greater expr_cmp_smaller expr_cmp_greaterequal expr_cmp_smallerequal
 %type <np> if_stmt expr_bool while_stmt primary_double expr_double primary_string
 %type <np> expr_string expr_int primary_int primary_get_variable
+%right '='
+%right '!'
 %left '+' '-'
 %left '*' '/'
-%left EQUAL NOTEQUAL '!' '<' '>' SMALLEREQUAL GREATEREQUAL
-%right '='
+%left '.'
+%left EQUAL NOTEQUAL '<' '>' SMALLEREQUAL GREATEREQUAL
 
 %start prog
 
@@ -53,7 +54,9 @@ stmt
     : expr
     | def_var
     | set_var
+    | set_member_var
     | def_func
+    | def_class
     | if_stmt
     | while_stmt
     | stmt stmt
@@ -61,18 +64,50 @@ stmt
       $$ = make_ast_op(SEQ, $1, $2);
     }
     ;
+def_class
+    : CLASSDEF NAME '{' def_vars def_funcs '}'
+    {
+    $$ = make_ast_def_class($2, $4, $5);
+    }
+    | CLASSDEF NAME '{' def_vars '}'
+    {
+    $$ = make_ast_def_class($2, $4, NULL);
+    }
+    | CLASSDEF NAME '{' def_funcs '}'
+    {
+    $$ = make_ast_def_class($2, NULL, $4);
+    }
+    | CLASSDEF NAME '{' '}'
+    {
+    $$ = make_ast_def_class($2, NULL, NULL);
+    }
+    ;
+def_vars
+    : def_var
+    | def_vars def_var
+    {
+    $$ = make_ast_op(SEQ, $1, $2);
+    }
+    ;
+def_funcs
+    : def_func
+    | def_funcs def_func
+    {
+    $$ = make_ast_op(SEQ, $1, $2);
+    }
+    ;
 def_func
-    : FUNCTION NAME '(' def_var ')' TYPE_LITERAL '{' stmt '}'
+    : FUNCTION NAME '(' def_var ')' NAME '{' stmt '}'
     {
     $$ = make_ast_def_func($2, $4, $6, $8);
     }
-    | FUNCTION NAME '(' ')' TYPE_LITERAL '{' stmt '}'
+    | FUNCTION NAME '(' ')' NAME '{' stmt '}'
     {
     $$ = make_ast_def_func($2, NULL, $5, $7);
     }
     ;
 def_var
-    : VAR NAME TYPE_LITERAL
+    : VAR NAME NAME
     {
     $$ = make_ast_def_var($2, $3);
     }
@@ -81,6 +116,12 @@ set_var
     : NAME '=' expr
     {
     $$ = make_ast_set_var($1, $3);
+    }
+    ;
+set_member_var
+    : NAME '.' NAME '=' expr
+    {
+    $$ = make_ast_set_member_var($1, $3, $5);
     }
     ;
 if_stmt

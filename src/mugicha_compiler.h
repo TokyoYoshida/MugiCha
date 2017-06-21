@@ -15,6 +15,7 @@ class MugichaScopeInfo {
   std::shared_ptr<llvm::LLVMContext> context_;
   std::shared_ptr<LLVMModuleBuilder> module_;
   std::shared_ptr<LLVMLocalVariableMap> var_map_;
+  std::shared_ptr<LLVMStructDefMap> struct_def_map_;
 
 public:
   MugichaScopeInfo() ;
@@ -36,6 +37,8 @@ public:
   std::shared_ptr<LLVMExprBuilder> makeExprBuilder();
 
   std::shared_ptr<LLVMLocalVariableMap> getVarMap();
+
+  std::shared_ptr<LLVMStructDefMap> getStructDefMap();
 };
 
 llvm::Type *getLLVMTypeByMugichaType(TYPE type,llvm::LLVMContext *context);

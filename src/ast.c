@@ -108,10 +108,11 @@ ASTNODE *make_ast_get_var(char *name)
 {
     ASTNODE *np;
 
-    np = make_astnode();
+TMP_DEBUGL;
 
+    np = make_astnode();
     np->type       = ANY;// TODO ここで型情報を設定しておくとあとで型の不整合エラーをチェックできるかもしれない
-    np->op         = GET_VAL;
+    np->op         = GET_VAR;
     np->sym        = lookup_symbol(name);
     np->left       = NULL;
     np->right      = NULL;
@@ -170,10 +171,9 @@ ASTNODE *make_ast_call_func(char *name, ASTNODE *set_args)
     FUNC *f;
 
     np = make_astnode();
-
     np->type       = ANY;
     np->op         = CALL_FUNC;
-    np->sym        = lookup_symbol(name);
+    np->sym        = lookup_make_symbol(name);
     f = lookup_func(np->sym);
     np->set_args       = set_args;
 
@@ -185,46 +185,54 @@ ASTNODE *make_ast_call_func(char *name, ASTNODE *set_args)
     return np;
 }
 
-ASTNODE *make_ast_def_func(char *name, ASTNODE *def_args, TYPE type, ASTNODE *body)
+ASTNODE *make_ast_def_func(char *name, ASTNODE *def_args, char *type_name, ASTNODE *body)
 {
     ASTNODE *np;
 
 
     np = make_astnode();
 
-    np->type       = type;
+    np->type       = get_type_by_name(type_name);
     np->op         = DEF_FUNC;
-    np->sym        = make_symbol(name);
+    np->sym        = lookup_make_symbol(name);
     np->left       = NULL;
     np->right      = NULL;
 
-    make_func(np->sym, type, np, body, def_args);
-
-    // printf("symbol = %s",symbol_description(np->sym));
-
-    // print_astnodeln(0, np);
-
-
+    make_func(np->sym, np->type, np, body, def_args);
 
     return np;
 }
 
-ASTNODE *make_ast_def_var(char *name, TYPE type)
+ASTNODE *make_ast_def_class(char *name, ASTNODE *def_vars, ASTNODE *def_funcs)
+{
+  ASTNODE *np;
+
+
+  np = make_astnode();
+
+  np->type       = ANY;
+  np->op         = DEF_CLASS;
+  np->sym        = lookup_make_symbol(name);
+  np->def_vars   = def_vars;
+  np->def_funcs  = def_funcs;
+
+  return np;
+}
+
+
+ASTNODE *make_ast_def_var(char *name, char *type_name)
 {
     ASTNODE *np;
 
 
     np = make_astnode();
 
-    np->type       = type;
-    np->op         = DEF_VAL;
-    np->sym        = make_symbol(name);
+    np->type       = get_type_by_name(type_name);
+    if(np->type == KLASS) np->klass = lookup_make_symbol(type_name);
+    np->op         = DEF_VAR;
+    np->sym        = lookup_make_symbol(name);
     np->left       = NULL;
     np->right      = NULL;
-
-    // printf("symbol = %s",symbol_description(np->sym));
-
-    // print_astnodeln(0, np);
 
     return np;
 }
@@ -234,14 +242,39 @@ ASTNODE *make_ast_set_var(char *name, ASTNODE *newval)
     ASTNODE *np;
     SYMBOL *s;
 
-
     s = lookup_symbol(name);
 
     np = make_astnode();
 
     np->type       = ANY;
-    np->op         = SET_VAL;
+    np->op         = SET_VAR;
     np->sym        = s;
+    np->left       = newval;
+    np->right      = NULL;
+
+    // printf("symbol = %s",symbol_description(np->sym));
+
+    // print_astnodeln(0, np);
+
+    return np;
+}
+
+ASTNODE *make_ast_set_member_var(char *var_name, char *member_name, ASTNODE *newval)
+{
+    ASTNODE *np;
+    SYMBOL *s, *mems;
+
+TMP_DEBUGL;
+
+    s = lookup_symbol(var_name);
+    mems = lookup_symbol(member_name);
+
+    np = make_astnode();
+
+    np->type       = ANY;
+    np->op         = SET_MEMBER_VAR;
+    np->sym        = s;
+    np->member     = mems;
     np->left       = newval;
     np->right      = NULL;
 
@@ -262,7 +295,6 @@ void print_astnode(int depth, ASTNODE *np)
   }
 
 
-
   t = get_type_description(np->type);
   o = get_op_description(np->op);
   v = value_description(np->val);
@@ -270,9 +302,10 @@ void print_astnode(int depth, ASTNODE *np)
 
 
 
-  if(np->op == DEF_VAL){
+  if(np->op == DEF_VAR){
     printf("/ val symbol : %s / ",symbol_description(np->sym));
   }
+  DEBUGP(np->sym);
   if(np->op == DEF_FUNC){
     printf("/ func symbol : %s / ",symbol_description(np->sym));
   }
