@@ -1,23 +1,10 @@
-func retint() int {
-  100
-}
-
-func retbool() bool {
-  true
-}
-
-func retdouble() double {
-  1.1
-}
-
-func retstring() string {
-  "test"
-}
 
 func main() int {
-  print(retint())
-  print(retbool())
-  print(retdouble())
-  print(retstring())
+  class TestX {
+    var x int
+  }
+  var y TestX
+  y.x = 100
+  print(y.x)
   0
 }

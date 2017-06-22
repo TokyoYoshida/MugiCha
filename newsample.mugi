@@ -1,0 +1,10 @@
+
+func main() int {
+  class Testx {
+    var x int
+  }
+  var y Testx
+  y = 100
+  print("ok")
+  0
+}

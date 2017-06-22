@@ -148,12 +148,12 @@ llvm::Value *LLVMExprBuilder::makeConst(float value){
 }
 
 llvm::Value *LLVMExprBuilder::makeConst(double value){
-DEBUGL;
+
   llvm::LLVMContext *context = func_->getModuleBuilder()->getContext();
 
-  DEBUGL;
+
   llvm::Value *val = llvm::ConstantFP::get(llvm::Type::getDoubleTy(*context), value);
-  DEBUGL;
+
 
   return val;
 }
@@ -168,22 +168,24 @@ llvm::Value *LLVMExprBuilder::makeConst(llvm::StringRef str){
 
 // 値を作成して呼び出し元で使用するパターン
 llvm::Instruction *LLVMExprBuilder::makeCalcOp(llvm::AddrSpaceCastInst::BinaryOps ops,llvm::Value *lhs,llvm::Value *rhs){
-DEBUGL;
+
   llvm::LLVMContext *context = func_->getModuleBuilder()->getContext();
   llvm::BasicBlock *block = func_->getBasicBlock();
 
-  DEBUGL;
+
   llvm::Instruction *inst = llvm::BinaryOperator::Create(ops, lhs, rhs, "calcresult");
 
-  DEBUGL;
+
   block->getInstList().push_back(inst); //この操作を挟まないとうまく行かず
 
-  DEBUGL;
+
   return inst;
 }
 
-LLVMLocalVariable::LLVMLocalVariable(std::shared_ptr<LLVMModuleBuilder> module, std::string name, TYPE type){
+LLVMVariable::LLVMVariable(std::shared_ptr<LLVMModuleBuilder> module, std::string name, TYPE type){
   module_ = module;
+
+  flg = 0; // TODO make-class-update
 
   switch(type){
     case INT:
@@ -196,31 +198,169 @@ LLVMLocalVariable::LLVMLocalVariable(std::shared_ptr<LLVMModuleBuilder> module, 
     case STRING:
       value_ = module->getBuilder()->CreateAlloca(llvm::Type::getInt8PtrTy(*module->getContext()), 0, name);
       break;
-    default:
-      ASSERT_FAIL_BLOCK();
+    case KLASS:
+      flg = 1;
+      break;
   }
 }
 
-void LLVMLocalVariable::set(llvm::Value *newVal){
-  module_->getBuilder()->CreateStore(newVal, value_);
+void LLVMVariable::set(llvm::Value *newVal){
+  // TODO make-class-update
+
+
+
+  if( flg == 1 ){
+TMP_DEBUGL;
+    llvm::Type   *intTy  = llvm::Type::getInt32Ty(*module_->getContext());
+
+    std::vector<llvm::Type*>  fields = { intTy, intTy };
+
+    auto structTy = llvm::StructType::create(fields, "Testx", false);
+    // auto st = std::make_shared<LLVMStructDef>("Testx", fields);
+    auto newinst = new llvm::AllocaInst(structTy);
+
+
+    auto funcBuilder = std::make_shared<LLVMFuncBuilder>(module_, module_->getBuilder()->GetInsertBlock()->getParent());
+
+    auto block = funcBuilder->getBasicBlock();
+
+
+    block->getInstList().push_back(newinst);
+
+
+    auto store = module_->getBuilder()->CreateStore(llvm::ConstantInt::get(intTy, 10000),  module_->getBuilder()->CreateStructGEP(structTy,newinst, 0));
+
+  } else {
+    module_->getBuilder()->CreateStore(newVal, value_);
+  }
+
+
 }
 
-llvm::Value *LLVMLocalVariable::get(){
+llvm::Value *LLVMVariable::get(){
   return module_->getBuilder()->CreateLoad(value_);
 }
 
-LLVMLocalVariableMap::LLVMLocalVariableMap(std::shared_ptr<LLVMModuleBuilder> module){
+LLVMStructDef::LLVMStructDef(std::string def_name, std::vector<llvm::Type*>  fields){
+
+  def_name_ = def_name;
+
+  fields_ = fields;
+
+  structTy = llvm::StructType::create(fields, def_name, false);
+
+}
+
+llvm::StructType *LLVMStructDef::getStructTy(){
+  return structTy;
+}
+
+LLVMStructDefMap::LLVMStructDefMap(){
+}
+
+void LLVMStructDefMap::set(std::string name, LLVMStructDef *struct_def){
+  map[name] = struct_def;
+}
+
+LLVMStructDef *LLVMStructDefMap::get(std::string name){
+  TMP_DEBUGS(name.c_str());
+  TMP_DEBUGP(strlen(name.c_str()));
+  TMP_DEBUGP(&map[name]);
+  return map[name];
+}
+
+void LLVMStructDefMap::makeStructDef(std::string def_name, std::vector<llvm::Type*>  fields){
+TMP_DEBUGL;
+TMP_DEBUGS(def_name.c_str());
+  LLVMStructDef *sd = new LLVMStructDef(def_name, fields);
+  map[def_name] = sd;
+  TMP_DEBUGP(&map[def_name]);
+  TMP_DEBUGP(strlen(def_name.c_str()));
+}
+
+LLVMStruct::LLVMStruct(std::shared_ptr<LLVMModuleBuilder> module,LLVMStructDef *struct_def, std::string name) : LLVMVariable(module, name, KLASS){
+  TMP_DEBUGL;
+  struct_def_ = struct_def;
+  TMP_DEBUGL;
+  TMP_DEBUGP(struct_def);
+  alloca_inst = new llvm::AllocaInst(struct_def->getStructTy());
+  TMP_DEBUGL;
+  auto iBuilder = module_->getBuilder();
+  auto block = iBuilder->GetInsertBlock();
+  block->getInstList().push_back(alloca_inst);
+}
+
+void LLVMStruct::set(std::string member_name, llvm::Value *newVal){
+  // ASSERT_FAIL("under construction");
+    auto iBuilder = module_->getBuilder();
+    auto structTy = struct_def_->getStructTy();
+    llvm::Type   *intTy  = llvm::Type::getInt32Ty(*module_->getContext());
+    auto store = iBuilder->CreateStore(llvm::ConstantInt::get(intTy, 10000), iBuilder->CreateStructGEP(structTy,alloca_inst, 0));
+}
+
+llvm::Value *LLVMStruct::get(std::string member_name){
+  auto iBuilder = module_->getBuilder();
+  auto structTy = struct_def_->getStructTy();
+  llvm::Type   *intTy  = llvm::Type::getInt32Ty(*module_->getContext());
+  auto load = iBuilder->CreateLoad( iBuilder->CreateStructGEP(structTy,alloca_inst, 0));
+
+  return load;
+}
+
+LLVMVariableMap::LLVMVariableMap(std::shared_ptr<LLVMModuleBuilder> module){
   module_ = module;
 }
 
+void LLVMVariableMap::set(VariableIndicator *target, llvm::Value *newVal){
+  target->set(this, newVal);
+}
+
+llvm::Value *LLVMVariableMap::get(VariableIndicator *target){
+  return target->get(this);
+}
+
+LLVMVariable *LLVMVariableMap::LLVMVariableMap::getVariable(std::string name){
+  return map[name];
+}
+
+LLVMLocalVariableMap::LLVMLocalVariableMap(std::shared_ptr<LLVMModuleBuilder> module) : LLVMVariableMap(module){
+
+}
+
 void LLVMLocalVariableMap::makeVariable(std::string name ,TYPE type){
-  map[name] = new LLVMLocalVariable(module_, name, type);
+  map[name] = new LLVMVariable(module_, name, type);
 }
 
-void LLVMLocalVariableMap::set(std::string name, llvm::Value *newVal){
-  map[name]->set(newVal);
+void LLVMLocalVariableMap::makeStruct(std::string name, LLVMStructDef *structDef){
+  TMP_DEBUGL;
+  map[name] = new LLVMStruct(module_, structDef, name);
+  TMP_DEBUGL;
 }
 
-llvm::Value *LLVMLocalVariableMap::get(std::string name){
-  return map[name]->get();
+VariableIndicator::VariableIndicator(std::string name){
+    name_ = name;
+}
+
+void VariableIndicator::set(LLVMVariableMap *target, llvm::Value *newVal){
+    auto var = target->getVariable(name_);
+    var->set(newVal);
+}
+
+llvm::Value *VariableIndicator::get(LLVMVariableMap *target){
+    auto var = target->getVariable(name_);
+    return var->get();
+}
+
+StructIndicator::StructIndicator(std::string name, std::string member_name) : VariableIndicator(name){
+    member_name_ = member_name;
+}
+
+void StructIndicator::set(LLVMVariableMap *target, llvm::Value *newVal){
+    auto var = (LLVMStruct *)target->getVariable(name_);
+    var->set(member_name_, newVal);
+}
+
+llvm::Value *StructIndicator::get(LLVMVariableMap *target){
+    auto var = (LLVMStruct *)target->getVariable(name_);
+    return var->get(member_name_);
 }
