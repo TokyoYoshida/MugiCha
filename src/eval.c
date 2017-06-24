@@ -257,11 +257,11 @@ VALUE eval_node_op(ASTNODE *ap)
       return exec_cmp(ap, ap->op);
     case PRINTDATA:
       return exec_print(ap);
-    case DEF_VAL:
+    case DEF_VAR:
       return exec_def_var(ap);
-    case SET_VAL:
+    case SET_VAR:
       return exec_set_var(ap);
-    case GET_VAL:
+    case GET_VAR:
       return exec_get_var(ap);
     case DEF_FUNC:
     return exec_def_func(ap);

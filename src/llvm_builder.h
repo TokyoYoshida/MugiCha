@@ -1,3 +1,4 @@
+
 #ifndef LLVM_BUILDER_H
 #define LLVM_BUILDER_H 1
 
@@ -59,31 +60,103 @@ public:
   llvm::Instruction *makeCalcOp(llvm::BasicBlock *block ,llvm::AddrSpaceCastInst::BinaryOps ops,llvm::Value *lhs,llvm::Value *rhs );
 };
 
-class LLVMLocalVariable {
+class LLVMVariable {
+  protected:
   std::shared_ptr<LLVMModuleBuilder> module_;
   llvm::Value *value_;
 
   public:
-  LLVMLocalVariable(std::shared_ptr<LLVMModuleBuilder> module, std::string name, TYPE type);
+  LLVMVariable(std::shared_ptr<LLVMModuleBuilder> module, std::string name, TYPE type);
 
   void set(llvm::Value *newVal);
 
   llvm::Value *get();
 };
 
-class LLVMLocalVariableMap {
+class LLVMStructDef {
+  public:
+    llvm::StructType *structTy;
+    std::string def_name_;
+    std::map<std::string, llvm::Type*> fields_;
+
+    LLVMStructDef(std::string def_name, std::map<std::string, llvm::Type*>  fields);
+
+    llvm::StructType *getStructTy();
+
+    int filedName2Index(std::string filed_name);
+};
+
+class LLVMStructDefMap {
+  public:
+  std::map<std::string, LLVMStructDef *> map;
+
+  LLVMStructDefMap();
+
+  virtual void set(std::string name, LLVMStructDef *struct_def);
+
+  virtual LLVMStructDef *get(std::string name);
+
+  void makeStructDef(std::string def_name, std::map<std::string, llvm::Type*>  fields);
+};
+
+class LLVMStruct : public LLVMVariable {
+private:
+  LLVMStructDef *struct_def_;
+  llvm::AllocaInst *alloca_inst;
+
+  public:
+  LLVMStruct(std::shared_ptr<LLVMModuleBuilder> module, LLVMStructDef *struct_def, std::string name);
+
+  virtual void set(std::string member_name, llvm::Value *newVal);
+
+  virtual llvm::Value *get(std::string member_name);
+};
+
+class LLVMVariableMap;
+
+class VariableIndicator {
+  protected:
+  std::string name_;
+
+  public:
+  VariableIndicator(std::string name);
+
+  virtual void set(LLVMVariableMap *target, llvm::Value *newVal); // visitor of Visitor Pattern
+  virtual llvm::Value *get(LLVMVariableMap *target); // visitor of Visitor Pattern
+};
+
+class StructIndicator : public VariableIndicator {
+  std::string member_name_;
+
+  public:
+    StructIndicator(std::string var_name, std::string member_name);
+
+    virtual void set(LLVMVariableMap *target, llvm::Value *newVal); // visitor of Visitor Pattern
+    virtual llvm::Value *get(LLVMVariableMap *target); // visitor of Visitor Pattern
+};
+
+class LLVMVariableMap {
   public:
   std::shared_ptr<LLVMModuleBuilder> module_;
-  std::map<std::string, LLVMLocalVariable *> map;
+  std::map<std::string, LLVMVariable *> map;
 
+  LLVMVariableMap(std::shared_ptr<LLVMModuleBuilder> module);
+
+  virtual void makeVariable(std::string name ,TYPE type) = 0;
+
+  void set(VariableIndicator *target, llvm::Value *newVal); // acceotor of Visitor Pattern
+
+  llvm::Value *get(VariableIndicator *target);
+
+  LLVMVariable *getVariable(std::string name);
+};
+
+class LLVMLocalVariableMap : public LLVMVariableMap {
+  public:
   LLVMLocalVariableMap(std::shared_ptr<LLVMModuleBuilder> module);
 
-  void makeVariable(std::string name ,TYPE type);
-
-  void set(std::string name, llvm::Value *newVal);
-
-  llvm::Value *get(std::string name);
-
+  virtual void makeVariable(std::string name ,TYPE type);
+  void makeStruct(std::string name, LLVMStructDef *structDef);
 };
 
 llvm::Value *makePrintf(std::shared_ptr<LLVMModuleBuilder> module,std::shared_ptr<LLVMExprBuilder> builder, std::string printStr); // TODO delete lator
