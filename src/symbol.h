@@ -9,6 +9,7 @@ typedef struct _SYMBOL {
   char *name;
 } SYMBOL;
 
+SYMBOL *lookup_make_symbol(char *name);
 SYMBOL *make_symbol(char *name);
 SYMBOL *lookup_symbol(char *name);
 char *symbol_description(SYMBOL *s);
