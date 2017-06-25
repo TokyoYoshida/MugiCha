@@ -5,16 +5,23 @@
 static SYMBOL syms[SYMBOL_MAX];
 static int pos = 0;
 
-SYMBOL *make_symbol(char *name)
+SYMBOL *lookup_make_symbol(char *name)
 {
   SYMBOL *s;
-
   s = lookup_symbol(name);
-  if(!s) ASSERT_FAIL("memory error");
+  if(s) return s;
 
-  s->name = name;
+  return make_symbol(name);
+}
 
-  return s;
+
+SYMBOL *make_symbol(char *name)
+{
+  if(pos == SYMBOL_MAX) ASSERT_FAIL("out of bounds.");
+
+  syms[pos].name = strdup(name);
+
+  return &syms[pos++];
 }
 
 SYMBOL *lookup_symbol(char *name)
@@ -22,22 +29,17 @@ SYMBOL *lookup_symbol(char *name)
   int i;
   SYMBOL *s;
 
+
   for( i = 0 ; i < pos ; i++ ){
     if( !strcmp(syms[i].name, name)) return &syms[i];
   }
 
-  if(pos == SYMBOL_MAX) ASSERT_FAIL("out of bounds.");
-
-  syms[pos].name = strdup(name);
-
-  return &syms[pos++];
-
+  return NULL;
 }
 
-char *symbol_description( SYMBOL *s)
+char *symbol_description(SYMBOL *s)
 {
   static char ret[100];
-
   sprintf(ret, " symbol name = %s" ,s->name);
 
   return ret;
