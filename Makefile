@@ -20,8 +20,8 @@ DIFFS = $(TESTS:%.mugi=%.diff)
 
 CC   = clang
 CPP  = clang++
-CPPFLG = -g -O3 -std=c++11 -fno-exceptions -fno-rtti $1 `llvm-config --cppflags`
-LDFLG = -ll -ly -g -O3 -std=c++11 -fno-exceptions -fno-rtti $1 `llvm-config --ldflags --system-libs --libs core executionengine interpreter mc support nativecodegen`
+CPPFLG = -g -O3 -std=c++11 -fno-exceptions $1 `llvm-config --cppflags`
+LDFLG = -ll -ly -g -O3 -std=c++11 -fno-exceptions $1 `llvm-config --ldflags --system-libs --libs core executionengine interpreter mc support nativecodegen`
 LEX  = lex
 YACC = yacc
 
