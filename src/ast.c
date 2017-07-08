@@ -311,6 +311,19 @@ TMP_DEBUGL;
     return np;
 }
 
+ASTNODE *make_ast_def_entry_func(char *entry_func_name, TYPE entry_func_type, char *root_func_name, ASTNODE *rootp)
+{
+  TMP_DEBUGL;
+  ASTNODE *call_root_func = make_ast_call_func(root_func_name, NULL);
+  TMP_DEBUGL;
+  ASTNODE *def_entry_func = make_ast_def_func(entry_func_name, NULL, get_type_description(entry_func_type), call_root_func);
+  TMP_DEBUGL;
+  ASTNODE *entryp = make_ast_op(SEQ, rootp, def_entry_func);
+  TMP_DEBUGL;
+
+  return entryp;
+}
+
 void print_astnode(int depth, ASTNODE *np)
 {
   int i;

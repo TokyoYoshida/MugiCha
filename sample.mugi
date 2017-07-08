@@ -1,12 +1,4 @@
-func main() int {
-  class TestX {
-    var x int
-    var y double
-  }
-  var y TestX
-  y.x = 100
-  y.y = 10000.1
-  print(y.x)
-  print(y.y)
+func _main() int {
+  print("ok")
   0
 }

@@ -46,6 +46,7 @@ ASTNODE *make_ast_def_class(char *name, ASTNODE *def_vars,ASTNODE *def_funcs);
 ASTNODE *make_ast_call_func(char *name, ASTNODE *set_args);
 ASTNODE *make_ast_if(ASTNODE *cond, ASTNODE *then_stmt, ASTNODE *else_stmt);
 ASTNODE *make_ast_while(ASTNODE *cond, ASTNODE *loop_stmt);
+ASTNODE *make_ast_def_entry_func(char *entry_func_name, TYPE entry_func_type, char *root_func_name, ASTNODE *rootp);
 
 void print_astnode(int depth, ASTNODE *np);
 void print_astnodeln(int depth, ASTNODE *np);

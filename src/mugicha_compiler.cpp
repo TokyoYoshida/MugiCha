@@ -308,6 +308,8 @@ llvm::Value *exec_call_func_codegen(ASTNODE *ap, std::shared_ptr<MugichaScopeInf
 {
   auto module = scope->getModuleBuilder();
 
+TMP_DEBUGL;
+TMP_DEBUGS(ap->sym->name);
 // TODO argument
   // if( ap->set_args != NULL){
   //   eval_node(f->def_args);
@@ -317,19 +319,26 @@ llvm::Value *exec_call_func_codegen(ASTNODE *ap, std::shared_ptr<MugichaScopeInf
   std::vector<llvm::Value *> argValues;
   std::vector<llvm::Type *> argTypes;
 
+  TMP_DEBUGL;
   auto context = module->getContext();
   auto funcInfo = lookup_func(ap->sym);
 
+  TMP_DEBUGL;
+  TMP_DEBUGS(ap->sym->name);
   auto defArgs = funcInfo->def_args;
+  TMP_DEBUGL;
   if( defArgs ){
     auto argType = getLLVMTypeByMugichaType(defArgs->type,context);
     argTypes.push_back(argType);
   }
+  TMP_DEBUGL;
 
+  TMP_DEBUGL;
   if( ap->set_args ){ // TODO only single arg. multi arg requre.
     auto setValue = eval_node_codegen(ap->set_args->left, scope);
     argValues.push_back(setValue);
   }
+  TMP_DEBUGL;
 
   auto retType = getLLVMTypeByMugichaType(funcInfo->type, context);
   llvm::FunctionType *funcType =
@@ -338,6 +347,8 @@ llvm::Value *exec_call_func_codegen(ASTNODE *ap, std::shared_ptr<MugichaScopeInf
     module->getModule()->getOrInsertFunction(funcInfo->sym->name, funcType);
 
   auto ret = module->getBuilder()->CreateCall(callFunc, argValues);
+
+  TMP_DEBUGL;
 
   return ret;
 }
@@ -652,7 +663,9 @@ void do_compile(ASTNODE *ast_rootp)
 
 extern "C" void mugicha_compile(ASTNODE *rootp)
 {
-  print_ast(0, rootp);
+  ASTNODE *entryp = make_ast_def_entry_func("main", INT, "_main", rootp);
 
-  do_compile(rootp);
+  print_ast(0, entryp);
+
+  do_compile(entryp);
 }
