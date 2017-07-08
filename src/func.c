@@ -1,4 +1,6 @@
+#include "mugicha.h"
 #include "func.h"
+#include "support.h"
 
 static FUNC funcs[FUNC_MAX];
 static int pos;
@@ -22,6 +24,7 @@ FUNC *lookup_func(SYMBOL *s)
     if( funcs[i].sym == s ) return &funcs[i];
   }
 
+  TMP_DEBUGL;
   return NULL;
 }
 

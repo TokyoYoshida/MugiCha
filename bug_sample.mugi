@@ -1,0 +1,17 @@
+func test() int {
+  var y TestX
+  y.x = 100
+  y.y = 10000.1
+  print(y.x)
+  print(y.y)
+}
+
+func main() int {
+  class TestX {
+    var x int
+    var y double
+  }
+  print("ok")
+  test()
+  0
+}

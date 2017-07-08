@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <string.h>
+#include "mugicha.h"
 #include "type.h"
 #include "support.h"
 
@@ -31,7 +32,7 @@ char *value_description(VALUE val)
 
 char *get_type_description(TYPE i)
 {
-  static char *type_a[] = {"ANY", "INT", "DOUBLE","BOOLTYPE","STRING"};
+  static char *type_a[] = {"any", "int", "double","bool","string"};
 
   if(i > STRING ) ASSERT_FAIL("out of bounds");
 
@@ -63,6 +64,8 @@ TYPE get_type_by_name(char *name)
   } else if (lookup_symbol(name)){
     return KLASS;
   }
+
+  TMP_DEBUGS(name);
   ASSERT_FAIL("this block expect never call.");
 }
 
