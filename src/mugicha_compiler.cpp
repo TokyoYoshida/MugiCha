@@ -160,10 +160,14 @@ llvm::Value *exec_set_var_codegen(ASTNODE *ap , std::shared_ptr<MugichaScopeInfo
 
 llvm::Value *exec_get_var_codegen(ASTNODE *ap , std::shared_ptr<MugichaScopeInfo> scope)
 {
+DEBUGL;
   auto expr = scope->makeExprBuilder();
+  DEBUGL;
 
   auto target = new VariableIndicator(ap->sym->name);
+  DEBUGL;
   auto ret = scope->getVarMap()->get(target);
+  DEBUGL;
 
   return ret;
 }

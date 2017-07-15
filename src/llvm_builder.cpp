@@ -200,6 +200,7 @@ llvm::Instruction *LLVMExprBuilder::makeCalcOp(llvm::AddrSpaceCastInst::BinaryOp
 LLVMVariable::LLVMVariable(std::shared_ptr<LLVMModuleBuilder> module, std::string name, TYPE type){
   module_ = module;
 
+  TMP_DEBUGL;
   switch(type){
     case INT:
     case BOOLTYPE:
@@ -209,8 +210,9 @@ LLVMVariable::LLVMVariable(std::shared_ptr<LLVMModuleBuilder> module, std::strin
       value_ = module->getBuilder()->CreateAlloca(llvm::Type::getDoubleTy(*module->getContext()), 0, name);
       break;
     case STRING:
-    case KLASS:
       value_ = module->getBuilder()->CreateAlloca(llvm::Type::getInt8PtrTy(*module->getContext()), 0, name);
+      break;
+    case KLASS:
       break;
   }
 }
@@ -265,11 +267,13 @@ void LLVMStructDefMap::makeStructDef(std::string def_name, LLVMStructDef::FieldD
 }
 
 LLVMStruct::LLVMStruct(std::shared_ptr<LLVMModuleBuilder> module,LLVMStructDef *struct_def, std::string name) : LLVMVariable(module, name, KLASS){
+TMP_DEBUGL;
   struct_def_ = struct_def;
   alloca_inst = new llvm::AllocaInst(struct_def->getStructTy());
   auto iBuilder = module_->getBuilder();
   auto block = iBuilder->GetInsertBlock();
   block->getInstList().push_back(alloca_inst);
+  TMP_DEBUGL;
 }
 
 void LLVMStruct::set(std::string member_name, llvm::Value *newVal){
@@ -317,7 +321,9 @@ void LLVMLocalVariableMap::makeVariable(std::string name ,TYPE type){
 }
 
 void LLVMLocalVariableMap::makeStruct(std::string name, LLVMStructDef *structDef){
+  TMP_DEBUGL;
   map[name] = new LLVMStruct(module_, structDef, name);
+  TMP_DEBUGL;
 }
 
 VariableIndicator::VariableIndicator(std::string name){
