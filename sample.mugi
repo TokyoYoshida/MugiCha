@@ -9,7 +9,7 @@ func main() int {
   y.x = 100
   y.y = 10000.1
   z = y
-  print(z.x)
+  print(y.x)
   print(z.y)
   0
 }

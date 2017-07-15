@@ -256,28 +256,17 @@ void LLVMStructDefMap::set(std::string name, LLVMStructDef *struct_def){
 }
 
 LLVMStructDef *LLVMStructDefMap::get(std::string name){
-  TMP_DEBUGS(name.c_str());
-  TMP_DEBUGP(strlen(name.c_str()));
-  TMP_DEBUGP(&map[name]);
   return map[name];
 }
 
 void LLVMStructDefMap::makeStructDef(std::string def_name, LLVMStructDef::FieldDef  fields){
-TMP_DEBUGL;
-TMP_DEBUGS(def_name.c_str());
   LLVMStructDef *sd = new LLVMStructDef(module_, def_name, fields);
   map[def_name] = sd;
-  TMP_DEBUGP(&map[def_name]);
-  TMP_DEBUGP(strlen(def_name.c_str()));
 }
 
 LLVMStruct::LLVMStruct(std::shared_ptr<LLVMModuleBuilder> module,LLVMStructDef *struct_def, std::string name) : LLVMVariable(module, name, KLASS){
-  TMP_DEBUGL;
   struct_def_ = struct_def;
-  TMP_DEBUGL;
-  TMP_DEBUGP(struct_def);
   alloca_inst = new llvm::AllocaInst(struct_def->getStructTy());
-  TMP_DEBUGL;
   auto iBuilder = module_->getBuilder();
   auto block = iBuilder->GetInsertBlock();
   block->getInstList().push_back(alloca_inst);
@@ -328,9 +317,7 @@ void LLVMLocalVariableMap::makeVariable(std::string name ,TYPE type){
 }
 
 void LLVMLocalVariableMap::makeStruct(std::string name, LLVMStructDef *structDef){
-  TMP_DEBUGL;
   map[name] = new LLVMStruct(module_, structDef, name);
-  TMP_DEBUGL;
 }
 
 VariableIndicator::VariableIndicator(std::string name){
