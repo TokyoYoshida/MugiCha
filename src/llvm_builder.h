@@ -68,9 +68,9 @@ class LLVMVariable {
   public:
   LLVMVariable(std::shared_ptr<LLVMModuleBuilder> module, std::string name, TYPE type);
 
-  void set(llvm::Value *newVal);
+  virtual void set(llvm::Value *newVal);
 
-  llvm::Value *get();
+  virtual llvm::Value *get();
 };
 
 class LLVMStructDef {
@@ -112,8 +112,10 @@ private:
   LLVMStruct(std::shared_ptr<LLVMModuleBuilder> module, LLVMStructDef *struct_def, std::string name);
 
   virtual void set(std::string member_name, llvm::Value *newVal);
+  virtual void set(llvm::Value *newVal);
 
   virtual llvm::Value *get(std::string member_name);
+  llvm::Value *get();
 };
 
 class LLVMVariableMap;

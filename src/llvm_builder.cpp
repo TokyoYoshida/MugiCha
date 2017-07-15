@@ -222,6 +222,7 @@ void LLVMVariable::set(llvm::Value *newVal){
 }
 
 llvm::Value *LLVMVariable::get(){
+  TMP_DEBUGL;
   return module_->getBuilder()->CreateLoad(value_);
 }
 
@@ -258,6 +259,7 @@ void LLVMStructDefMap::set(std::string name, LLVMStructDef *struct_def){
 }
 
 LLVMStructDef *LLVMStructDefMap::get(std::string name){
+  TMP_DEBUGL;
   return map[name];
 }
 
@@ -285,7 +287,12 @@ void LLVMStruct::set(std::string member_name, llvm::Value *newVal){
   auto store = iBuilder->CreateStore(newVal, iBuilder->CreateStructGEP(structTy,alloca_inst, field_i));
 }
 
+void LLVMStruct::set(llvm::Value *newVal){
+  alloca_inst = (llvm::AllocaInst *)newVal;
+}
+
 llvm::Value *LLVMStruct::get(std::string member_name){
+TMP_DEBUGL;
   auto iBuilder = module_->getBuilder();
   auto structTy = struct_def_->getStructTy();
 
@@ -294,6 +301,10 @@ llvm::Value *LLVMStruct::get(std::string member_name){
   auto load = iBuilder->CreateLoad( iBuilder->CreateStructGEP(structTy,alloca_inst, field_i));
 
   return load;
+}
+
+llvm::Value *LLVMStruct::get(){
+  return alloca_inst;
 }
 
 LLVMVariableMap::LLVMVariableMap(std::shared_ptr<LLVMModuleBuilder> module){
@@ -305,6 +316,7 @@ void LLVMVariableMap::set(VariableIndicator *target, llvm::Value *newVal){
 }
 
 llvm::Value *LLVMVariableMap::get(VariableIndicator *target){
+  TMP_DEBUGL;
   return target->get(this);
 }
 
@@ -336,7 +348,9 @@ void VariableIndicator::set(LLVMVariableMap *target, llvm::Value *newVal){
 }
 
 llvm::Value *VariableIndicator::get(LLVMVariableMap *target){
+TMP_DEBUGL;
     auto var = target->getVariable(name_);
+    TMP_DEBUGL;
     return var->get();
 }
 
@@ -350,6 +364,7 @@ void StructIndicator::set(LLVMVariableMap *target, llvm::Value *newVal){
 }
 
 llvm::Value *StructIndicator::get(LLVMVariableMap *target){
+TMP_DEBUGL;
     auto var = (LLVMStruct *)target->getVariable(name_);
     return var->get(member_name_);
 }
