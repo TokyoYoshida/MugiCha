@@ -278,6 +278,7 @@ void LLVMStructDefMap::makeStructDef(std::string def_name, LLVMStructDef::FieldD
 
 LLVMStructInitializer::LLVMStructInitializer(std::shared_ptr<LLVMModuleBuilder> module, LLVMStructDef *struct_def, std::string name){
   type.kind = KLASS;
+  type.name = strdup(name.c_str()); // TODO: free this memory
 }
 
 LLVMStruct::LLVMStruct(std::shared_ptr<LLVMModuleBuilder> module,LLVMStructDef *struct_def, std::string name) :  LLVMStructInitializer(module, struct_def, name) ,LLVMVariable(module, name, type) {

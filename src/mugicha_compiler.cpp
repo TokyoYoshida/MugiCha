@@ -58,6 +58,7 @@ llvm::Type *getLLVMTypeByMugichaType(TYPE type, llvm::LLVMContext *context) {
       return llvm::Type::getInt8PtrTy(*context);
       break;
     case KLASS:
+    TMP_DEBUGS(type.name);
     ASSERT_FAIL_BLOCK();
       break;
     default:
