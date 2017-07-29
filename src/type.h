@@ -5,7 +5,7 @@
 
 typedef enum _BOOL {FALSE, TRUE} BOOL;
 
-typedef enum _TYPEKIND {ANY, INT, DOUBLE, BOOLTYPE,STRING,KLASS} TYPEKIND;
+typedef enum _TYPEKIND {ANY, INT, DOUBLE, BOOLTYPE, STRING, KLASS} TYPEKIND;
 
 typedef struct _TYPE {
   TYPEKIND kind;

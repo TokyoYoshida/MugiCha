@@ -9,6 +9,11 @@ func test(var a TestX) int {
 
 func main() int {
   var y TestX
-  test(a = y)
+  var z TestX
+  y.x = 100
+  y.y = 10000.1
+  z = y
+  print(y.x)
+  print(z.y)
   0
 }
