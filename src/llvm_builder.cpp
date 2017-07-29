@@ -239,6 +239,7 @@ LLVMStructDef::LLVMStructDef(std::shared_ptr<LLVMModuleBuilder> module, std::str
   }
 
   structTy = llvm::StructType::create(fieldsvec, def_name, false);
+  structPtr = llvm::PointerType::getUnqual(structTy);
 }
 
 llvm::StructType *LLVMStructDef::getStructTy(){

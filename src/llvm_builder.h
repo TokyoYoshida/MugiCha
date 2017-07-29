@@ -81,6 +81,7 @@ class LLVMStructDef {
     llvm::StructType *structTy;
     std::string def_name_;
     FieldDef fields_;
+    llvm::PointerType *structPtr;
 
     LLVMStructDef(std::shared_ptr<LLVMModuleBuilder> module, std::string def_name, FieldDef  fields);
 
