@@ -197,7 +197,7 @@ llvm::Instruction *LLVMExprBuilder::makeCalcOp(llvm::AddrSpaceCastInst::BinaryOp
   return inst;
 }
 
-LLVMVariable::LLVMVariable(std::shared_ptr<LLVMModuleBuilder> module, std::string name, TYPE type){
+LLVMVariable::LLVMVariable(std::shared_ptr<LLVMModuleBuilder> module, std::string name, TYPE type, std::shared_ptr<LLVMStructDefMap> struct_def_map){
   module_ = module;
 
   TMP_DEBUGL;
@@ -213,8 +213,8 @@ LLVMVariable::LLVMVariable(std::shared_ptr<LLVMModuleBuilder> module, std::strin
       value_ = module->getBuilder()->CreateAlloca(llvm::Type::getInt8PtrTy(*module->getContext()), 0, name);
       break;
     case KLASS:
-      // auto structDef = scope->getStructDefMap()->get(type.klass->name);
-      // value_ = module->getBuilder()->CreateAlloca(struct_def->getStructPtr(), 0);
+      auto structDef = struct_def_map->get(type.klass->name);
+      value_ = module->getBuilder()->CreateAlloca(structDef->getStructPtr(), 0);
       ASSERT_FAIL_BLOCK();
       break;
   }
@@ -289,7 +289,7 @@ LLVMStructInitializer::LLVMStructInitializer(std::shared_ptr<LLVMModuleBuilder> 
 
 }
 
-LLVMStruct::LLVMStruct(std::shared_ptr<LLVMModuleBuilder> module,LLVMStructDef *struct_def, std::string name) :  LLVMStructInitializer(module, struct_def, name) ,LLVMVariable(module, name, type) {
+LLVMStruct::LLVMStruct(std::shared_ptr<LLVMModuleBuilder> module,LLVMStructDef *struct_def, std::string name, std::shared_ptr<LLVMStructDefMap> struct_def_map) :  LLVMStructInitializer(module, struct_def, name) ,LLVMVariable(module, name, type, struct_def_map) {
 TMP_DEBUGL;
   struct_def_ = struct_def;
   auto iBuilder = module_->getBuilder();
@@ -354,12 +354,12 @@ LLVMLocalVariableMap::LLVMLocalVariableMap(std::shared_ptr<LLVMModuleBuilder> mo
 }
 
 void LLVMLocalVariableMap::makeVariable(std::string name ,TYPE type){
-  map[name] = new LLVMVariable(module_, name, type);
+  map[name] = new LLVMVariable(module_, name, type, struct_def_map_);
 }
 
 void LLVMLocalVariableMap::makeStruct(std::string name, LLVMStructDef *structDef){
   TMP_DEBUGL;
-  map[name] = new LLVMStruct(module_, structDef, name);
+  map[name] = new LLVMStruct(module_, structDef, name ,struct_def_map_);
   TMP_DEBUGL;
 }
 

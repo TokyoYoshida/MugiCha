@@ -60,13 +60,15 @@ public:
   llvm::Instruction *makeCalcOp(llvm::BasicBlock *block ,llvm::AddrSpaceCastInst::BinaryOps ops,llvm::Value *lhs,llvm::Value *rhs );
 };
 
+class LLVMStructDefMap;
+
 class LLVMVariable {
   protected:
   std::shared_ptr<LLVMModuleBuilder> module_;
   llvm::Value *value_;
 
   public:
-  LLVMVariable(std::shared_ptr<LLVMModuleBuilder> module, std::string name, TYPE type);
+  LLVMVariable(std::shared_ptr<LLVMModuleBuilder> module, std::string name, TYPE type, std::shared_ptr<LLVMStructDefMap> struct_def_map);
 
   virtual void set(llvm::Value *newVal);
 
@@ -120,7 +122,7 @@ private:
   llvm::AllocaInst *alloca_inst_ptr;
 
   public:
-  LLVMStruct(std::shared_ptr<LLVMModuleBuilder> module, LLVMStructDef *struct_def, std::string name);
+  LLVMStruct(std::shared_ptr<LLVMModuleBuilder> module, LLVMStructDef *struct_def, std::string name, std::shared_ptr<LLVMStructDefMap> struct_def_map);
 
   virtual void set(std::string member_name, llvm::Value *newVal);
   virtual void set(llvm::Value *newVal);
