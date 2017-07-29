@@ -213,8 +213,11 @@ LLVMVariable::LLVMVariable(std::shared_ptr<LLVMModuleBuilder> module, std::strin
       value_ = module->getBuilder()->CreateAlloca(llvm::Type::getInt8PtrTy(*module->getContext()), 0, name);
       break;
     case KLASS:
+      auto structDef = scope->getStructDefMap()->get(type.klass->name);
+      value_ = module->getBuilder()->CreateAlloca(struct_def->getStructPtr(), 0);
       break;
   }
+  TMP_DEBUGL;
 }
 
 void LLVMVariable::set(llvm::Value *newVal){
