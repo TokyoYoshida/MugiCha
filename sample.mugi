@@ -4,6 +4,7 @@ class TestX {
 }
 
 func test(var a TestX) int {
+  print(a.x)
   0
 }
 
