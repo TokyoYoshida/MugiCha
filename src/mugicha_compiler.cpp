@@ -45,7 +45,7 @@
 
 #include "llvm_builder.h"
 
-llvm::Type *getLLVMTypeByMugichaType(TYPE type,llvm::LLVMContext *context) {
+llvm::Type *getLLVMTypeByMugichaType(TYPE type, llvm::LLVMContext *context) {
   switch(type){
     case INT:
     case BOOLTYPE:
@@ -56,6 +56,9 @@ llvm::Type *getLLVMTypeByMugichaType(TYPE type,llvm::LLVMContext *context) {
       break;
     case STRING:
       return llvm::Type::getInt8PtrTy(*context);
+      break;
+    case KLASS:
+      return llvm::Type::getUnqual(*context);
       break;
     default:
       ASSERT_FAIL_BLOCK();

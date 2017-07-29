@@ -3,6 +3,10 @@ class TestX {
   var y double
 }
 
+func test(var a TestX) int {
+  0
+}
+
 func main() int {
   var y TestX
   var z TestX
