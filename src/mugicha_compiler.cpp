@@ -149,12 +149,14 @@ TMP_DEBUGL;
 llvm::Value *exec_set_var_codegen(ASTNODE *ap , std::shared_ptr<MugichaScopeInfo> scope)
 {
   auto expr = scope->makeExprBuilder();
+  TMP_DEBUGL;
 
   auto ret = eval_node_codegen(ap->left, scope);
+  TMP_DEBUGL;
 
   auto target = new VariableIndicator(ap->sym->name);
   scope->getVarMap()->set(target ,ret);
-
+TMP_DEBUGL;
   return ret;
 }
 

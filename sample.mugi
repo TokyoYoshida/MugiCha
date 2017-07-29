@@ -8,7 +8,7 @@ func test(var a TestX) int {
 }
 
 func main() int {
-  var y TestX
+  var y int
   test(a = y)
   0
 }
