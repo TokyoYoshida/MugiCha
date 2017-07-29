@@ -106,7 +106,14 @@ class LLVMStructDefMap {
   void makeStructDef(std::string def_name, LLVMStructDef::FieldDef  fields);
 };
 
-class LLVMStruct : public LLVMVariable {
+class LLVMStructInitializer {
+public:
+  TYPE type;
+
+  LLVMStructInitializer(std::shared_ptr<LLVMModuleBuilder> module, LLVMStructDef *struct_def, std::string name);
+};
+
+class LLVMStruct : public LLVMStructInitializer ,public LLVMVariable {
 private:
   LLVMStructDef *struct_def_;
   llvm::AllocaInst *alloca_inst;

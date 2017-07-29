@@ -650,8 +650,6 @@ void do_compile(ASTNODE *ast_rootp)
   DEBUGL;
   std::shared_ptr<MugichaScopeInfo> scope = std::make_shared<MugichaScopeInfo>();
 
-  GLOBAL_ANY_TYPE.kind = ANY;
-
   DEBUGL;
   eval_node_codegen(ast_rootp, scope);
   //
