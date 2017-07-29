@@ -68,9 +68,9 @@ class LLVMVariable {
   public:
   LLVMVariable(std::shared_ptr<LLVMModuleBuilder> module, std::string name, TYPE type);
 
-  void set(llvm::Value *newVal);
+  virtual void set(llvm::Value *newVal);
 
-  llvm::Value *get();
+  virtual llvm::Value *get();
 };
 
 class LLVMStructDef {
@@ -81,10 +81,13 @@ class LLVMStructDef {
     llvm::StructType *structTy;
     std::string def_name_;
     FieldDef fields_;
+    llvm::PointerType *structPtr;
 
     LLVMStructDef(std::shared_ptr<LLVMModuleBuilder> module, std::string def_name, FieldDef  fields);
 
     llvm::StructType *getStructTy();
+    llvm::PointerType *getStructPtr();
+    std::string getDefName();
 
     int filedName2Index(std::string filed_name);
 };
@@ -103,17 +106,27 @@ class LLVMStructDefMap {
   void makeStructDef(std::string def_name, LLVMStructDef::FieldDef  fields);
 };
 
-class LLVMStruct : public LLVMVariable {
+class LLVMStructInitializer {
+public:
+  TYPE type;
+
+  LLVMStructInitializer(std::shared_ptr<LLVMModuleBuilder> module, LLVMStructDef *struct_def, std::string name);
+};
+
+class LLVMStruct : public LLVMStructInitializer ,public LLVMVariable {
 private:
   LLVMStructDef *struct_def_;
   llvm::AllocaInst *alloca_inst;
+  llvm::AllocaInst *alloca_inst_ptr;
 
   public:
   LLVMStruct(std::shared_ptr<LLVMModuleBuilder> module, LLVMStructDef *struct_def, std::string name);
 
   virtual void set(std::string member_name, llvm::Value *newVal);
+  virtual void set(llvm::Value *newVal);
 
   virtual llvm::Value *get(std::string member_name);
+  llvm::Value *get();
 };
 
 class LLVMVariableMap;

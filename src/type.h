@@ -3,7 +3,13 @@
 
 typedef enum _BOOL {FALSE, TRUE} BOOL;
 
-typedef enum _TYPE {ANY, INT, DOUBLE, BOOLTYPE,STRING,KLASS} TYPE;
+typedef enum _TYPEKIND {ANY, INT, DOUBLE, BOOLTYPE,STRING,KLASS} TYPEKIND;
+
+typedef struct _TYPE {
+  TYPEKIND kind;
+  char *name;
+} TYPE;
+
 typedef enum _OPERATION {NONE, VALUEDATA, ADD, SUB, MUL, DIV, SEQ, PRINTDATA,
     DEF_VAR, SET_VAR, GET_VAR, DEF_FUNC, CALL_FUNC, CMP_EQ, CMP_NOTEQ,
     CMP_GREATER, CMP_SMALLER, CMP_GREATEREQ, CMP_SMALLEREQ ,IF_STMT,WHILE_STMT ,SET_MEMBER_VAR, GET_MEMBER_VAR, DEF_CLASS } OPERATION ;
@@ -28,14 +34,11 @@ extern "C" {
 #endif /* __cplusplus */
 
 char *value_description(VALUE val);
-char *get_type_description(TYPE i);
+char *get_type_description(TYPEKIND i);
 char *get_op_description(OPERATION i);
-TYPE get_type_by_name(char *name);
+TYPEKIND get_type_by_name(char *name);
 char *get_bool_description(BOOL val);
 int comp_val(VALUE lhr, VALUE rhr);
-double cast_double(VALUE v);
-int cast_int(VALUE v);
-BOOL cast_bool(VALUE v);
 
 #ifdef __cplusplus
 }

@@ -1,12 +1,19 @@
+class TestX {
+  var x int
+  var y double
+}
+
+func test(var a TestX) int {
+  0
+}
+
 func main() int {
-  class TestX {
-    var x int
-    var y double
-  }
   var y TestX
+  var z TestX
   y.x = 100
   y.y = 10000.1
+  z = y
   print(y.x)
-  print(y.y)
+  print(z.y)
   0
 }

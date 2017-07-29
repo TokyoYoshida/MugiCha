@@ -3,7 +3,6 @@
 
 #include "ast.h"
 #include "dynode.h"
-#include "eval.h"
 
 enum MugichaMode {Interpreter, Compiler, DisplayAst};
 

@@ -39,14 +39,14 @@
 #include "mugicha.h"
 #include "stack.h"
 #include "support.h"
-#include "var.h"
+
 #include "func.h"
 #include "mugicha_compiler.h"
 
 #include "llvm_builder.h"
 
-llvm::Type *getLLVMTypeByMugichaType(TYPE type,llvm::LLVMContext *context) {
-  switch(type){
+llvm::Type *getLLVMTypeByMugichaType(TYPE type, llvm::LLVMContext *context) {
+  switch(type.kind){
     case INT:
     case BOOLTYPE:
       return llvm::Type::getInt32Ty(*context);
@@ -56,6 +56,10 @@ llvm::Type *getLLVMTypeByMugichaType(TYPE type,llvm::LLVMContext *context) {
       break;
     case STRING:
       return llvm::Type::getInt8PtrTy(*context);
+      break;
+    case KLASS:
+    TMP_DEBUGS(type.name);
+    ASSERT_FAIL_BLOCK();
       break;
     default:
       ASSERT_FAIL_BLOCK();
@@ -128,7 +132,7 @@ llvm::Value *exec_def_var_codegen(ASTNODE *ap , std::shared_ptr<MugichaScopeInfo
   auto expr = scope->makeExprBuilder();
 
 TMP_DEBUGL;
-  if(ap->type == KLASS){
+  if(ap->type.kind == KLASS){
     TMP_DEBUGL;
     auto strutDef = scope->getStructDefMap()->get(ap->klass->name);
     TMP_DEBUGS(ap->klass->name);
@@ -160,10 +164,14 @@ llvm::Value *exec_set_var_codegen(ASTNODE *ap , std::shared_ptr<MugichaScopeInfo
 
 llvm::Value *exec_get_var_codegen(ASTNODE *ap , std::shared_ptr<MugichaScopeInfo> scope)
 {
+DEBUGL;
   auto expr = scope->makeExprBuilder();
+  DEBUGL;
 
   auto target = new VariableIndicator(ap->sym->name);
+  DEBUGL;
   auto ret = scope->getVarMap()->get(target);
+  DEBUGL;
 
   return ret;
 }
@@ -182,7 +190,7 @@ llvm::Value *exec_calc_codegen(ASTNODE *ap,OPERATION calc_mode , std::shared_ptr
   auto rhs = eval_node_codegen(ap->right ,scope);
   llvm::AddrSpaceCastInst::BinaryOps ops;
 
-  auto type = lhs->getType();
+  auto type =  lhs->getType();
   switch(calc_mode){
     case ADD:
       if(type->isIntegerTy()){
@@ -239,7 +247,7 @@ llvm::Value *exec_print_codegen(ASTNODE *ap, std::shared_ptr<MugichaScopeInfo> s
   std::vector<llvm::Value *> values;
 
   llvm::Value *formatStr;
-  auto type = targetValue->getType();
+  auto type =  targetValue->getType();
   if( type->isIntegerTy()) {
     formatStr = expr->makeConst("value = %d\n"); // TODO type switch
   } else if( type->isDoubleTy()) {
@@ -613,7 +621,7 @@ llvm::Value *eval_node_value_codegen(ASTNODE *ap, std::shared_ptr<MugichaScopeIn
 {
   auto expr = scope->makeExprBuilder();
 
-  switch(ap->val.type){
+  switch(ap->val.type.kind){
     case INT:
       return expr->makeConst(ap->val.val.i);
       break;
