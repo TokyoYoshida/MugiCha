@@ -11,7 +11,6 @@ typedef struct _ASTNODE {
     OPERATION     op;
     VALUE         val;
     SYMBOL        *sym;
-    SYMBOL        *klass;
     SYMBOL        *member;
     struct _ASTNODE *left;
     struct _ASTNODE *right;

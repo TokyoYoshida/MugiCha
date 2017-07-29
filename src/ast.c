@@ -227,7 +227,7 @@ ASTNODE *make_ast_def_var(char *name, char *type_name)
     np = make_astnode();
 
     np->type.kind =  get_type_by_name(type_name);
-    if(np->type.kind == KLASS) np->klass = lookup_make_symbol(type_name);
+    if(np->type.kind == KLASS) np->type.klass = lookup_make_symbol(type_name);
     np->op         = DEF_VAR;
     np->sym        = lookup_make_symbol(name);
     np->left       = NULL;

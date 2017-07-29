@@ -45,24 +45,18 @@
 
 #include "llvm_builder.h"
 
-llvm::Type *getLLVMTypeByMugichaType(TYPE type, llvm::LLVMContext *context) {
+llvm::Type *getLLVMTypeByMugichaType(TYPE type, std::shared_ptr<MugichaScopeInfo> scope) {
   switch(type.kind){
     case INT:
     case BOOLTYPE:
-      return llvm::Type::getInt32Ty(*context);
-      break;
+      return llvm::Type::getInt32Ty(*scope->getContext());
     case DOUBLE:
-      return llvm::Type::getDoubleTy(*context);
-      break;
+      return llvm::Type::getDoubleTy(*scope->getContext());
     case STRING:
-      return llvm::Type::getInt8PtrTy(*context);
-      break;
+      return llvm::Type::getInt8PtrTy(*scope->getContext());
     case KLASS:
-    TMP_DEBUGS(type.name);
-    ASSERT_FAIL_BLOCK();
-      break;
-    default:
-      ASSERT_FAIL_BLOCK();
+      auto structDef = scope->getStructDefMap()->get(type.klass->name);
+      return llvm::PointerType::getUnqual(structDef->getStructTy());
   }
 }
 
@@ -134,8 +128,8 @@ llvm::Value *exec_def_var_codegen(ASTNODE *ap , std::shared_ptr<MugichaScopeInfo
 TMP_DEBUGL;
   if(ap->type.kind == KLASS){
     TMP_DEBUGL;
-    auto strutDef = scope->getStructDefMap()->get(ap->klass->name);
-    TMP_DEBUGS(ap->klass->name);
+    auto strutDef = scope->getStructDefMap()->get(ap->type.klass->name);
+    TMP_DEBUGS(ap->type.klass->name);
     TMP_DEBUGP(strutDef);
     TMP_DEBUGL;
     scope->getVarMap()->makeStruct(ap->sym->name ,strutDef);
@@ -278,11 +272,11 @@ llvm::Value *exec_def_func_codegen(ASTNODE *ap, std::shared_ptr<MugichaScopeInfo
 
   auto defArgs = funcInfo->def_args;
   if( defArgs ){
-    auto argType = getLLVMTypeByMugichaType(defArgs->type, context);
+    auto argType = getLLVMTypeByMugichaType(defArgs->type, new_scope);
     argTypes.push_back(argType);
   }
 
-  auto retType = getLLVMTypeByMugichaType(funcInfo->type, context);
+  auto retType = getLLVMTypeByMugichaType(funcInfo->type, new_scope);
   auto func_type =
     llvm::FunctionType::get(retType, argTypes, false);
 
@@ -330,7 +324,7 @@ llvm::Value *exec_call_func_codegen(ASTNODE *ap, std::shared_ptr<MugichaScopeInf
 
   auto defArgs = funcInfo->def_args;
   if( defArgs ){
-    auto argType = getLLVMTypeByMugichaType(defArgs->type,context);
+    auto argType = getLLVMTypeByMugichaType(defArgs->type,scope);
     argTypes.push_back(argType);
   }
 
@@ -339,7 +333,7 @@ llvm::Value *exec_call_func_codegen(ASTNODE *ap, std::shared_ptr<MugichaScopeInf
     argValues.push_back(setValue);
   }
 
-  auto retType = getLLVMTypeByMugichaType(funcInfo->type, context);
+  auto retType = getLLVMTypeByMugichaType(funcInfo->type, scope);
   llvm::FunctionType *funcType =
     llvm::FunctionType::get(retType, argTypes, true);
   llvm::Constant *callFunc =

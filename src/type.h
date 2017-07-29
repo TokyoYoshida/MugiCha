@@ -1,13 +1,15 @@
 #ifndef TYPE_H
 #define TYPE_H 1
 
+#include "symbol.h"
+
 typedef enum _BOOL {FALSE, TRUE} BOOL;
 
 typedef enum _TYPEKIND {ANY, INT, DOUBLE, BOOLTYPE,STRING,KLASS} TYPEKIND;
 
 typedef struct _TYPE {
   TYPEKIND kind;
-  char *name;
+  SYMBOL *klass;
 } TYPE;
 
 typedef enum _OPERATION {NONE, VALUEDATA, ADD, SUB, MUL, DIV, SEQ, PRINTDATA,

@@ -52,6 +52,7 @@
 
 #include "llvm_builder.h"
 #include "support.h"
+#include "symbol.h"
 
 llvm::Type *astType2LLVMType(std::shared_ptr<LLVMModuleBuilder> module, TYPE type){
   switch(type.kind){
@@ -278,7 +279,10 @@ void LLVMStructDefMap::makeStructDef(std::string def_name, LLVMStructDef::FieldD
 
 LLVMStructInitializer::LLVMStructInitializer(std::shared_ptr<LLVMModuleBuilder> module, LLVMStructDef *struct_def, std::string name){
   type.kind = KLASS;
-  type.name = strdup(name.c_str()); // TODO: free this memory
+  type.klass = lookup_symbol(struct_def->getDefName().c_str());
+  TMP_DEBUGS(type.klass->name);
+  ASSERT_FAIL_BLOCK();
+
 }
 
 LLVMStruct::LLVMStruct(std::shared_ptr<LLVMModuleBuilder> module,LLVMStructDef *struct_def, std::string name) :  LLVMStructInitializer(module, struct_def, name) ,LLVMVariable(module, name, type) {
