@@ -46,6 +46,8 @@ llvm::Type *getLLVMTypeByMugichaType(TYPE type,llvm::LLVMContext *context);
 llvm::Value *eval_node_codegen(ASTNODE *ap, std::shared_ptr<MugichaScopeInfo> scope);
 LLVMStructDef::FieldDef getFieldDef(LLVMModuleBuilder *module, ASTNODE *ap);
 
+TYPE GLOBAL_ANY_TYPE;
+
 #endif /* __cplusplus */
 
 

@@ -87,6 +87,7 @@ class LLVMStructDef {
 
     llvm::StructType *getStructTy();
     llvm::PointerType *getStructPtr();
+    std::string getDefName();
 
     int filedName2Index(std::string filed_name);
 };

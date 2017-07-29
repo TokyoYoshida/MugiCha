@@ -53,9 +53,8 @@
 #include "llvm_builder.h"
 #include "support.h"
 
-
 llvm::Type *astType2LLVMType(std::shared_ptr<LLVMModuleBuilder> module, TYPE type){
-  switch(type){
+  switch(type.kind){
     case INT:
     case BOOLTYPE:
       return llvm::Type::getInt32Ty(*module->getContext());
@@ -201,7 +200,7 @@ LLVMVariable::LLVMVariable(std::shared_ptr<LLVMModuleBuilder> module, std::strin
   module_ = module;
 
   TMP_DEBUGL;
-  switch(type){
+  switch(type.kind){
     case INT:
     case BOOLTYPE:
       value_ = module->getBuilder()->CreateAlloca(llvm::Type::getInt32Ty(*module->getContext()), 0, name);
@@ -250,6 +249,10 @@ llvm::PointerType *LLVMStructDef::getStructPtr(){
   return structPtr;
 }
 
+std::string LLVMStructDef::getDefName(){
+  return def_name_;
+}
+
 int LLVMStructDef::filedName2Index(std::string filed_name){
   auto iter = fields_.find(filed_name);
   return std::distance(fields_.begin(), iter);
@@ -273,7 +276,7 @@ void LLVMStructDefMap::makeStructDef(std::string def_name, LLVMStructDef::FieldD
   map[def_name] = sd;
 }
 
-LLVMStruct::LLVMStruct(std::shared_ptr<LLVMModuleBuilder> module,LLVMStructDef *struct_def, std::string name) : LLVMVariable(module, name, KLASS){
+LLVMStruct::LLVMStruct(std::shared_ptr<LLVMModuleBuilder> module,LLVMStructDef *struct_def, std::string name) : LLVMVariable(module, name, GLOBAL_ANY_TYPE) {
 TMP_DEBUGL;
   struct_def_ = struct_def;
   auto iBuilder = module_->getBuilder();

@@ -3,7 +3,6 @@
 #include <string.h>
 #include "mugicha.h"
 #include "support.h"
-#include "var.h"
 #include "func.h"
 
 ASTNODE *make_astnode(){
@@ -11,7 +10,7 @@ ASTNODE *make_astnode(){
   p = (ASTNODE *)malloc(sizeof(ASTNODE));
   if(!p) ASSERT_FAIL("memory error");
 
-  p->type = ANY;
+  p->type.kind =  ANY;
   p->op = NONE;
   p->val.val.v = NULL;
   p->sym = NULL;
@@ -31,7 +30,7 @@ ASTNODE *make_ast_int(int val)
   np = make_astnode();
 
   np->op    = VALUEDATA;
-  np->val.type  = INT;
+  np->val.type.kind =  INT;
   np->val.val.i = val;
   np->left  = NULL;
   np->right = NULL;
@@ -47,7 +46,7 @@ ASTNODE *make_ast_double(double val)
   np = make_astnode();
 
   np->op    = VALUEDATA;
-  np->val.type  = DOUBLE;
+  np->val.type.kind =  DOUBLE;
   np->val.val.d = val;
   np->left  = NULL;
   np->right = NULL;
@@ -63,7 +62,7 @@ ASTNODE *make_ast_string(char *val)
   np = make_astnode();
 
   np->op    = VALUEDATA;
-  np->val.type  = STRING;
+  np->val.type.kind =  STRING;
   np->val.val.s = val;
   np->left  = NULL;
   np->right = NULL;
@@ -79,7 +78,7 @@ ASTNODE *make_ast_bool(BOOL val)
   np = make_astnode();
 
   np->op    = VALUEDATA;
-  np->val.type  = BOOLTYPE;
+  np->val.type.kind =  BOOLTYPE;
   np->val.val.b = val;
   np->left  = NULL;
   np->right = NULL;
@@ -95,7 +94,7 @@ ASTNODE *make_ast_op(OPERATION op, ASTNODE *lhr, ASTNODE *rhr)
 
     np = make_astnode();
 
-    np->type = ANY;
+    np->type.kind =  ANY;
     np->op   = op;
     np->left = lhr;
     np->right = rhr;
@@ -111,7 +110,7 @@ ASTNODE *make_ast_get_var(char *name)
 TMP_DEBUGL;
 
     np = make_astnode();
-    np->type       = ANY;// TODO ここで型情報を設定しておくとあとで型の不整合エラーをチェックできるかもしれない
+    np->type.kind =  ANY;// TODO ここで型情報を設定しておくとあとで型の不整合エラーをチェックできるかもしれない
     np->op         = GET_VAR;
     np->sym        = lookup_symbol(name);
     np->left       = NULL;
@@ -126,7 +125,7 @@ ASTNODE *make_ast_cmd(OPERATION op, ASTNODE *argp)
 
     np = make_astnode();
 
-    np->type = ANY;
+    np->type.kind =  ANY;
     np->op   = op;
     np->left = argp;
     np->right = NULL;
@@ -140,7 +139,7 @@ ASTNODE *make_ast_if(ASTNODE *cond, ASTNODE *then_stmt, ASTNODE *else_stmt)
 
     np = make_astnode();
 
-    np->type       = ANY;
+    np->type.kind =  ANY;
     np->op         = IF_STMT;
     np->condition   = cond;
     np->left       = then_stmt;
@@ -155,7 +154,7 @@ ASTNODE *make_ast_while(ASTNODE *cond, ASTNODE *loop_stmt)
 
     np = make_astnode();
 
-    np->type       = ANY;
+    np->type.kind =  ANY;
     np->op         = WHILE_STMT;
     np->condition   = cond;
     np->left       = loop_stmt;
@@ -171,7 +170,7 @@ ASTNODE *make_ast_call_func(char *name, ASTNODE *set_args)
     FUNC *f;
 
     np = make_astnode();
-    np->type       = ANY;
+    np->type.kind =  ANY;
     np->op         = CALL_FUNC;
     np->sym        = lookup_make_symbol(name);
     f = lookup_func(np->sym);
@@ -192,7 +191,7 @@ ASTNODE *make_ast_def_func(char *name, ASTNODE *def_args, char *type_name, ASTNO
 
     np = make_astnode();
 
-    np->type       = get_type_by_name(type_name);
+    np->type.kind =  get_type_by_name(type_name);
     np->op         = DEF_FUNC;
     np->sym        = lookup_make_symbol(name);
     np->left       = NULL;
@@ -210,7 +209,7 @@ ASTNODE *make_ast_def_class(char *name, ASTNODE *def_vars, ASTNODE *def_funcs)
 
   np = make_astnode();
 
-  np->type       = ANY;
+  np->type.kind =  ANY;
   np->op         = DEF_CLASS;
   np->sym        = lookup_make_symbol(name);
   np->def_vars   = def_vars;
@@ -227,8 +226,8 @@ ASTNODE *make_ast_def_var(char *name, char *type_name)
 
     np = make_astnode();
 
-    np->type       = get_type_by_name(type_name);
-    if(np->type == KLASS) np->klass = lookup_make_symbol(type_name);
+    np->type.kind =  get_type_by_name(type_name);
+    if(np->type.kind == KLASS) np->klass = lookup_make_symbol(type_name);
     np->op         = DEF_VAR;
     np->sym        = lookup_make_symbol(name);
     np->left       = NULL;
@@ -246,7 +245,7 @@ ASTNODE *make_ast_set_var(char *name, ASTNODE *newval)
 
     np = make_astnode();
 
-    np->type       = ANY;
+    np->type.kind =  ANY;
     np->op         = SET_VAR;
     np->sym        = s;
     np->left       = newval;
@@ -271,7 +270,7 @@ TMP_DEBUGL;
 
     np = make_astnode();
 
-    np->type       = ANY;
+    np->type.kind =  ANY;
     np->op         = SET_MEMBER_VAR;
     np->sym        = s;
     np->member     = mems;
@@ -297,7 +296,7 @@ TMP_DEBUGL;
 
     np = make_astnode();
 
-    np->type       = ANY;
+    np->type.kind =  ANY;
     np->op         = GET_MEMBER_VAR;
     np->sym        = s;
     np->member     = mems;
@@ -320,11 +319,10 @@ void print_astnode(int depth, ASTNODE *np)
     printf(" ");
   }
 
-
-  t = get_type_description(np->type);
+  t = get_type_description(np->type.kind);
   o = get_op_description(np->op);
   v = value_description(np->val);
-  printf("ast type = %s oper = %s val = %s ",t ,o, v);
+  printf("ast type.kind =  %s oper = %s val = %s ",t ,o, v);
 
 
 
@@ -337,7 +335,7 @@ void print_astnode(int depth, ASTNODE *np)
   }
 
 /*
-  printf("addr:%p type = %s oper = %s val = %s left = %p right = %p\n",
+  printf("addr:%p type.kind =  %s oper = %s val = %s left = %p right = %p\n",
                                         np ,
                                         type_a[np->type],
                                         op_a[np->op],

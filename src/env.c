@@ -1,6 +1,5 @@
 #include "env.h"
 #include "stack.h"
-#include "var.h"
 
 static ENV envs[ENV_MAX];
 static int pos;
