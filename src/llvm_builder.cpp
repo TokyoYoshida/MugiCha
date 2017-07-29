@@ -213,8 +213,9 @@ LLVMVariable::LLVMVariable(std::shared_ptr<LLVMModuleBuilder> module, std::strin
       value_ = module->getBuilder()->CreateAlloca(llvm::Type::getInt8PtrTy(*module->getContext()), 0, name);
       break;
     case KLASS:
-      auto structDef = scope->getStructDefMap()->get(type.klass->name);
-      value_ = module->getBuilder()->CreateAlloca(struct_def->getStructPtr(), 0);
+      // auto structDef = scope->getStructDefMap()->get(type.klass->name);
+      // value_ = module->getBuilder()->CreateAlloca(struct_def->getStructPtr(), 0);
+      ASSERT_FAIL_BLOCK();
       break;
   }
   TMP_DEBUGL;
@@ -330,8 +331,9 @@ llvm::Value *LLVMStruct::get(){
   return alloca_inst_ptr;
 }
 
-LLVMVariableMap::LLVMVariableMap(std::shared_ptr<LLVMModuleBuilder> module){
+LLVMVariableMap::LLVMVariableMap(std::shared_ptr<LLVMModuleBuilder> module, std::shared_ptr<LLVMStructDefMap> struct_def_map){
   module_ = module;
+  struct_def_map_ = struct_def_map;
 }
 
 void LLVMVariableMap::set(VariableIndicator *target, llvm::Value *newVal){
@@ -347,7 +349,7 @@ LLVMVariable *LLVMVariableMap::LLVMVariableMap::getVariable(std::string name){
   return map[name];
 }
 
-LLVMLocalVariableMap::LLVMLocalVariableMap(std::shared_ptr<LLVMModuleBuilder> module) : LLVMVariableMap(module){
+LLVMLocalVariableMap::LLVMLocalVariableMap(std::shared_ptr<LLVMModuleBuilder> module, std::shared_ptr<LLVMStructDefMap> struct_def_map) : LLVMVariableMap(module ,struct_def_map){
 
 }
 

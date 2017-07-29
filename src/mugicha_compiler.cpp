@@ -63,8 +63,8 @@ llvm::Type *getLLVMTypeByMugichaType(TYPE type, std::shared_ptr<MugichaScopeInfo
 MugichaScopeInfo::MugichaScopeInfo() {
   context_ = std::make_shared<llvm::LLVMContext>();
   module_ = std::make_shared<LLVMModuleBuilder>("mugicha", context_);
-  var_map_ = std::make_shared<LLVMLocalVariableMap>(module_);
   struct_def_map_ = std::make_shared<LLVMStructDefMap>(module_);
+  var_map_ = std::make_shared<LLVMLocalVariableMap>(module_, struct_def_map_);
 }
 
 MugichaScopeInfo::MugichaScopeInfo(std::shared_ptr<MugichaScopeInfo> old_scope) {

@@ -156,8 +156,9 @@ class LLVMVariableMap {
   public:
   std::shared_ptr<LLVMModuleBuilder> module_;
   std::map<std::string, LLVMVariable *> map;
+  std::shared_ptr<LLVMStructDefMap> struct_def_map_;
 
-  LLVMVariableMap(std::shared_ptr<LLVMModuleBuilder> module);
+  LLVMVariableMap(std::shared_ptr<LLVMModuleBuilder> module,  std::shared_ptr<LLVMStructDefMap> struct_def_map);
 
   virtual void makeVariable(std::string name ,TYPE type) = 0;
 
@@ -170,7 +171,7 @@ class LLVMVariableMap {
 
 class LLVMLocalVariableMap : public LLVMVariableMap {
   public:
-  LLVMLocalVariableMap(std::shared_ptr<LLVMModuleBuilder> module);
+LLVMLocalVariableMap(std::shared_ptr<LLVMModuleBuilder> module, std::shared_ptr<LLVMStructDefMap> struct_def_map);
 
   virtual void makeVariable(std::string name ,TYPE type);
   void makeStruct(std::string name, LLVMStructDef *structDef);
