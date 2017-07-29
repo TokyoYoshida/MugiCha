@@ -295,7 +295,7 @@ void LLVMStruct::set(std::string member_name, llvm::Value *newVal){
 }
 
 void LLVMStruct::set(llvm::Value *newVal){
-  alloca_inst = (llvm::AllocaInst *)newVal;
+  alloca_inst_ptr = (llvm::AllocaInst *)newVal;
 }
 
 llvm::Value *LLVMStruct::get(std::string member_name){
@@ -303,15 +303,16 @@ TMP_DEBUGL;
   auto iBuilder = module_->getBuilder();
   auto structTy = struct_def_->getStructTy();
 
+  auto ptr = iBuilder->CreateLoad(alloca_inst_ptr);
   auto field_i = struct_def_->filedName2Index(member_name);
 
-  auto load = iBuilder->CreateLoad( iBuilder->CreateStructGEP(structTy,alloca_inst, field_i));
+  auto load = iBuilder->CreateLoad( iBuilder->CreateStructGEP(structTy, ptr, field_i));
 
   return load;
 }
 
 llvm::Value *LLVMStruct::get(){
-  return alloca_inst;
+  return alloca_inst_ptr;
 }
 
 LLVMVariableMap::LLVMVariableMap(std::shared_ptr<LLVMModuleBuilder> module){
