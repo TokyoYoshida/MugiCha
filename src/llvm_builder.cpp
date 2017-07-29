@@ -280,6 +280,7 @@ TMP_DEBUGL;
   alloca_inst= iBuilder->CreateAlloca(struct_def->getStructTy(), 0);
   TMP_DEBUGL;
   alloca_inst_ptr = iBuilder->CreateAlloca(struct_def->getStructPtr(), 0);
+  iBuilder->CreateStore(alloca_inst, alloca_inst_ptr);
 }
 
 void LLVMStruct::set(std::string member_name, llvm::Value *newVal){
