@@ -246,6 +246,10 @@ llvm::StructType *LLVMStructDef::getStructTy(){
   return structTy;
 }
 
+llvm::PointerType *LLVMStructDef::getStructPtr(){
+  return structPtr;
+}
+
 int LLVMStructDef::filedName2Index(std::string filed_name){
   auto iter = fields_.find(filed_name);
   return std::distance(fields_.begin(), iter);
@@ -272,20 +276,21 @@ void LLVMStructDefMap::makeStructDef(std::string def_name, LLVMStructDef::FieldD
 LLVMStruct::LLVMStruct(std::shared_ptr<LLVMModuleBuilder> module,LLVMStructDef *struct_def, std::string name) : LLVMVariable(module, name, KLASS){
 TMP_DEBUGL;
   struct_def_ = struct_def;
-  alloca_inst = new llvm::AllocaInst(struct_def->getStructTy());
   auto iBuilder = module_->getBuilder();
-  auto block = iBuilder->GetInsertBlock();
-  block->getInstList().push_back(alloca_inst);
+  alloca_inst= iBuilder->CreateAlloca(struct_def->getStructTy(), 0);
   TMP_DEBUGL;
+  alloca_inst_ptr = iBuilder->CreateAlloca(struct_def->getStructPtr(), 0);
 }
 
 void LLVMStruct::set(std::string member_name, llvm::Value *newVal){
+  auto iBuilder = module_->getBuilder();
+
+  auto ptr = iBuilder->CreateLoad(alloca_inst_ptr);
   auto field_i = struct_def_->filedName2Index(member_name);
 
-  auto iBuilder = module_->getBuilder();
   auto structTy = struct_def_->getStructTy();
   llvm::Type   *intTy  = llvm::Type::getInt32Ty(*module_->getContext());
-  auto store = iBuilder->CreateStore(newVal, iBuilder->CreateStructGEP(structTy,alloca_inst, field_i));
+  auto store = iBuilder->CreateStore(newVal, iBuilder->CreateStructGEP(structTy, ptr, field_i));
 }
 
 void LLVMStruct::set(llvm::Value *newVal){

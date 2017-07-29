@@ -86,6 +86,7 @@ class LLVMStructDef {
     LLVMStructDef(std::shared_ptr<LLVMModuleBuilder> module, std::string def_name, FieldDef  fields);
 
     llvm::StructType *getStructTy();
+    llvm::PointerType *getStructPtr();
 
     int filedName2Index(std::string filed_name);
 };
@@ -108,6 +109,7 @@ class LLVMStruct : public LLVMVariable {
 private:
   LLVMStructDef *struct_def_;
   llvm::AllocaInst *alloca_inst;
+  llvm::AllocaInst *alloca_inst_ptr;
 
   public:
   LLVMStruct(std::shared_ptr<LLVMModuleBuilder> module, LLVMStructDef *struct_def, std::string name);
