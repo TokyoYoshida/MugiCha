@@ -8,12 +8,7 @@ func test(var a TestX) int {
 }
 
 func main() int {
-  var y TestX
-  var z TestX
-  y.x = 100
-  y.y = 10000.1
-  z = y
-  print(y.x)
-  print(z.y)
+  var y int
+  test(a = y)
   0
 }

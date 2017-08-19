@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#ifdef DEBUG
+#ifdef MUGICHA_DEBUG
 
 #define DEBUGL     fprintf(stderr, "%s:%d\n",__FILE__,__LINE__)
 #define DEBUGP(p)  fprintf(stderr, "%s:%d addr = %p\n",__FILE__, __LINE__, p)
@@ -26,6 +26,12 @@
 #define DEBUGS(m)  ((void)0)
 #define DEBUGI(i)  ((void)0)
 #define DEBUGW(m)  ((void)0)
+
+#define TMP_DEBUGL  ((void)0)
+#define TMP_DEBUGP(p)  ((void)0)
+#define TMP_DEBUGS(m)  ((void)0)
+#define TMP_DEBUGI(i)  ((void)0)
+#define TMP_DEBUGW(m)  ((void)0)
 
 #endif
 
