@@ -13,6 +13,7 @@ func main() int {
   y.x = 100
   y.y = 10000.1
   z = y
+  z.x = 101
   print(y.x)
   print(z.y)
   0

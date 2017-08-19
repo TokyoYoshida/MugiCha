@@ -58,7 +58,7 @@ llvm::Type *getLLVMTypeByMugichaType(TYPE type, std::shared_ptr<MugichaScopeInfo
       TMP_DEBUGS(type.klass->name);
       auto structDef = scope->getStructDefMap()->get(type.klass->name);
       TMP_DEBUGS(structDef->getDefName().c_str());
-      return llvm::PointerType::getUnqual(structDef->getStructTy());
+      return structDef->getStructPtr();
   }
 }
 

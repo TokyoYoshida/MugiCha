@@ -292,14 +292,13 @@ TMP_DEBUGL;
   auto iBuilder = module_->getBuilder();
   alloca_inst= iBuilder->CreateAlloca(struct_def->getStructTy(), 0);
   TMP_DEBUGL;
-  alloca_inst_ptr = iBuilder->CreateAlloca(struct_def->getStructPtr(), 0);
-  iBuilder->CreateStore(alloca_inst, alloca_inst_ptr);
+  iBuilder->CreateStore(alloca_inst, value_);
 }
 
 void LLVMStruct::set(std::string member_name, llvm::Value *newVal){
   auto iBuilder = module_->getBuilder();
 
-  auto ptr = iBuilder->CreateLoad(alloca_inst_ptr);
+  auto ptr = iBuilder->CreateLoad(value_);
   auto field_i = struct_def_->filedName2Index(member_name);
 
   auto structTy = struct_def_->getStructTy();
@@ -308,7 +307,8 @@ void LLVMStruct::set(std::string member_name, llvm::Value *newVal){
 }
 
 void LLVMStruct::set(llvm::Value *newVal){
-  alloca_inst_ptr = (llvm::AllocaInst *)newVal;
+  module_->getBuilder()->CreateStore(newVal, value_);
+  // value_ = (llvm::AllocaInst *)newVal;
 }
 
 llvm::Value *LLVMStruct::get(std::string member_name){
@@ -316,7 +316,7 @@ TMP_DEBUGL;
   auto iBuilder = module_->getBuilder();
   auto structTy = struct_def_->getStructTy();
 
-  auto ptr = iBuilder->CreateLoad(alloca_inst_ptr);
+  auto ptr = iBuilder->CreateLoad(value_);
   auto field_i = struct_def_->filedName2Index(member_name);
 
   auto load = iBuilder->CreateLoad( iBuilder->CreateStructGEP(structTy, ptr, field_i));
@@ -325,7 +325,8 @@ TMP_DEBUGL;
 }
 
 llvm::Value *LLVMStruct::get(){
-  return alloca_inst_ptr;
+  return module_->getBuilder()->CreateLoad(value_);
+  // return value_;
 }
 
 LLVMVariableMap::LLVMVariableMap(std::shared_ptr<LLVMModuleBuilder> module, std::shared_ptr<LLVMStructDefMap> struct_def_map){

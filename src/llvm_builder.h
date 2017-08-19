@@ -128,7 +128,7 @@ private:
   virtual void set(llvm::Value *newVal);
 
   virtual llvm::Value *get(std::string member_name);
-  llvm::Value *get();
+  virtual llvm::Value *get();
 };
 
 class LLVMVariableMap;
