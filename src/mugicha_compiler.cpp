@@ -296,10 +296,10 @@ llvm::Value *exec_def_func_codegen(ASTNODE *ap, std::shared_ptr<MugichaScopeInfo
   auto &argList = func->getFunc()->getArgumentList();
   auto varMap = new_scope->getVarMap();
 
-  auto iter = argList.begin();
-  llvm::Value *argVal = static_cast<llvm::Value*>( &*iter);
-
   if( defArgs ){
+    auto iter = argList.begin();
+    llvm::Value *argVal = static_cast<llvm::Value*>( &*iter);
+
     auto argName =defArgs->sym->name;
     varMap->makeVariable(argName, defArgs->type);
     auto target = new VariableIndicator(argName); // TODO this memory needs free after process
