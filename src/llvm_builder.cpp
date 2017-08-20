@@ -200,7 +200,7 @@ llvm::Instruction *LLVMExprBuilder::makeCalcOp(llvm::AddrSpaceCastInst::BinaryOp
 LLVMVariable::LLVMVariable(std::shared_ptr<LLVMModuleBuilder> module, std::string name, TYPE type, std::shared_ptr<LLVMStructDefMap> struct_def_map){
   module_ = module;
 
-  TMP_DEBUGL;
+  TMP_DEBUGI(type.kind);
   switch(type.kind){
     case INT:
     case BOOLTYPE:
@@ -308,7 +308,9 @@ void LLVMStruct::set(std::string member_name, llvm::Value *newVal){
 }
 
 void LLVMStruct::set(llvm::Value *newVal){
+  TMP_DEBUGL;
   module_->getBuilder()->CreateStore(newVal, value_);
+  TMP_DEBUGL;
   // value_ = (llvm::AllocaInst *)newVal;
 }
 
@@ -336,7 +338,9 @@ LLVMVariableMap::LLVMVariableMap(std::shared_ptr<LLVMModuleBuilder> module, std:
 }
 
 void LLVMVariableMap::set(VariableIndicator *target, llvm::Value *newVal){
+  TMP_DEBUGL;
   target->set(this, newVal);
+  TMP_DEBUGL;
 }
 
 llvm::Value *LLVMVariableMap::get(VariableIndicator *target){
@@ -345,6 +349,7 @@ llvm::Value *LLVMVariableMap::get(VariableIndicator *target){
 }
 
 LLVMVariable *LLVMVariableMap::LLVMVariableMap::getVariable(std::string name){
+  TMP_DEBUGP(map[name]);
   return map[name];
 }
 
@@ -367,12 +372,13 @@ VariableIndicator::VariableIndicator(std::string name){
 }
 
 void VariableIndicator::set(LLVMVariableMap *target, llvm::Value *newVal){
+    TMP_DEBUGL;
     auto var = target->getVariable(name_);
     var->set(newVal);
 }
 
 llvm::Value *VariableIndicator::get(LLVMVariableMap *target){
-TMP_DEBUGL;
+    TMP_DEBUGL;
     auto var = target->getVariable(name_);
     TMP_DEBUGL;
     return var->get();
@@ -383,12 +389,22 @@ StructIndicator::StructIndicator(std::string name, std::string member_name) : Va
 }
 
 void StructIndicator::set(LLVMVariableMap *target, llvm::Value *newVal){
+    TMP_DEBUGL;
+    if( member_name_.empty() ){
+      ASSERT_FAIL_BLOCK();
+    }
+    TMP_DEBUGL;
+    TMP_DEBUGS(name_.c_str());
+    TMP_DEBUGS(member_name_.c_str());
     auto var = (LLVMStruct *)target->getVariable(name_);
+    TMP_DEBUGL;
+    TMP_DEBUGP(var);
     var->set(member_name_, newVal);
+    TMP_DEBUGL;
 }
 
 llvm::Value *StructIndicator::get(LLVMVariableMap *target){
-TMP_DEBUGL;
+    TMP_DEBUGL;
     auto var = (LLVMStruct *)target->getVariable(name_);
     return var->get(member_name_);
 }

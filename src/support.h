@@ -4,6 +4,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#define MUGICHA_DEBUG 1
+
 #ifdef MUGICHA_DEBUG
 
 #define DEBUGL     fprintf(stderr, "%s:%d\n",__FILE__,__LINE__)
