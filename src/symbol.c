@@ -5,7 +5,7 @@
 static SYMBOL syms[SYMBOL_MAX];
 static int pos = 0;
 
-SYMBOL *lookup_make_symbol(char *name)
+SYMBOL *lookup_make_symbol(char const *name)
 {
   SYMBOL *s;
   s = lookup_symbol(name);
@@ -15,7 +15,7 @@ SYMBOL *lookup_make_symbol(char *name)
 }
 
 
-SYMBOL *make_symbol(char *name)
+SYMBOL *make_symbol(char const *name)
 {
   if(pos == SYMBOL_MAX) ASSERT_FAIL("out of bounds.");
 
@@ -24,7 +24,7 @@ SYMBOL *make_symbol(char *name)
   return &syms[pos++];
 }
 
-SYMBOL *lookup_symbol(char *name)
+SYMBOL *lookup_symbol(char const *name)
 {
   int i;
   SYMBOL *s;
