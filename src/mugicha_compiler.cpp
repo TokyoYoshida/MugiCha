@@ -39,34 +39,34 @@
 #include "mugicha.h"
 #include "stack.h"
 #include "support.h"
-#include "var.h"
+
 #include "func.h"
 #include "mugicha_compiler.h"
 
 #include "llvm_builder.h"
 
-llvm::Type *getLLVMTypeByMugichaType(TYPE type,llvm::LLVMContext *context) {
-  switch(type){
+llvm::Type *getLLVMTypeByMugichaType(TYPE type, std::shared_ptr<MugichaScopeInfo> scope) {
+  switch(type.kind){
     case INT:
     case BOOLTYPE:
-      return llvm::Type::getInt32Ty(*context);
-      break;
+      return llvm::Type::getInt32Ty(*scope->getContext());
     case DOUBLE:
-      return llvm::Type::getDoubleTy(*context);
-      break;
+      return llvm::Type::getDoubleTy(*scope->getContext());
     case STRING:
-      return llvm::Type::getInt8PtrTy(*context);
-      break;
-    default:
-      ASSERT_FAIL_BLOCK();
+      return llvm::Type::getInt8PtrTy(*scope->getContext());
+    case KLASS:
+      TMP_DEBUGS(type.klass->name);
+      auto structDef = scope->getStructDefMap()->get(type.klass->name);
+      TMP_DEBUGS(structDef->getDefName().c_str());
+      return structDef->getStructPtr();
   }
 }
 
 MugichaScopeInfo::MugichaScopeInfo() {
   context_ = std::make_shared<llvm::LLVMContext>();
   module_ = std::make_shared<LLVMModuleBuilder>("mugicha", context_);
-  var_map_ = std::make_shared<LLVMLocalVariableMap>(module_);
   struct_def_map_ = std::make_shared<LLVMStructDefMap>(module_);
+  var_map_ = std::make_shared<LLVMLocalVariableMap>(module_, struct_def_map_);
 }
 
 MugichaScopeInfo::MugichaScopeInfo(std::shared_ptr<MugichaScopeInfo> old_scope) {
@@ -128,10 +128,10 @@ llvm::Value *exec_def_var_codegen(ASTNODE *ap , std::shared_ptr<MugichaScopeInfo
   auto expr = scope->makeExprBuilder();
 
 TMP_DEBUGL;
-  if(ap->type == KLASS){
+  if(ap->type.kind == KLASS){
     TMP_DEBUGL;
-    auto strutDef = scope->getStructDefMap()->get(ap->klass->name);
-    TMP_DEBUGS(ap->klass->name);
+    auto strutDef = scope->getStructDefMap()->get(ap->type.klass->name);
+    TMP_DEBUGS(ap->type.klass->name);
     TMP_DEBUGP(strutDef);
     TMP_DEBUGL;
     scope->getVarMap()->makeStruct(ap->sym->name ,strutDef);
@@ -149,21 +149,27 @@ TMP_DEBUGL;
 llvm::Value *exec_set_var_codegen(ASTNODE *ap , std::shared_ptr<MugichaScopeInfo> scope)
 {
   auto expr = scope->makeExprBuilder();
+  TMP_DEBUGL;
 
   auto ret = eval_node_codegen(ap->left, scope);
+  TMP_DEBUGL;
 
   auto target = new VariableIndicator(ap->sym->name);
   scope->getVarMap()->set(target ,ret);
-
+TMP_DEBUGL;
   return ret;
 }
 
 llvm::Value *exec_get_var_codegen(ASTNODE *ap , std::shared_ptr<MugichaScopeInfo> scope)
 {
+DEBUGL;
   auto expr = scope->makeExprBuilder();
+  DEBUGL;
 
   auto target = new VariableIndicator(ap->sym->name);
+  DEBUGL;
   auto ret = scope->getVarMap()->get(target);
+  DEBUGL;
 
   return ret;
 }
@@ -182,7 +188,7 @@ llvm::Value *exec_calc_codegen(ASTNODE *ap,OPERATION calc_mode , std::shared_ptr
   auto rhs = eval_node_codegen(ap->right ,scope);
   llvm::AddrSpaceCastInst::BinaryOps ops;
 
-  auto type = lhs->getType();
+  auto type =  lhs->getType();
   switch(calc_mode){
     case ADD:
       if(type->isIntegerTy()){
@@ -239,7 +245,7 @@ llvm::Value *exec_print_codegen(ASTNODE *ap, std::shared_ptr<MugichaScopeInfo> s
   std::vector<llvm::Value *> values;
 
   llvm::Value *formatStr;
-  auto type = targetValue->getType();
+  auto type =  targetValue->getType();
   if( type->isIntegerTy()) {
     formatStr = expr->makeConst("value = %d\n"); // TODO type switch
   } else if( type->isDoubleTy()) {
@@ -270,11 +276,14 @@ llvm::Value *exec_def_func_codegen(ASTNODE *ap, std::shared_ptr<MugichaScopeInfo
 
   auto defArgs = funcInfo->def_args;
   if( defArgs ){
-    auto argType = getLLVMTypeByMugichaType(defArgs->type, context);
+    TMP_DEBUGI(defArgs->type.kind);
+    auto argType = getLLVMTypeByMugichaType(defArgs->type, new_scope);
+    TMP_DEBUGL;
     argTypes.push_back(argType);
+    TMP_DEBUGL;
   }
 
-  auto retType = getLLVMTypeByMugichaType(funcInfo->type, context);
+  auto retType = getLLVMTypeByMugichaType(funcInfo->type, new_scope);
   auto func_type =
     llvm::FunctionType::get(retType, argTypes, false);
 
@@ -287,17 +296,21 @@ llvm::Value *exec_def_func_codegen(ASTNODE *ap, std::shared_ptr<MugichaScopeInfo
   auto &argList = func->getFunc()->getArgumentList();
   auto varMap = new_scope->getVarMap();
 
-  auto iter = argList.begin();
-  llvm::Value *argVal = static_cast<llvm::Value*>( &*iter);
-
   if( defArgs ){
+    TMP_DEBUGL;
+    auto iter = argList.begin();
+    llvm::Value *argVal = static_cast<llvm::Value*>( &*iter);
+
     auto argName =defArgs->sym->name;
     varMap->makeVariable(argName, defArgs->type);
     auto target = new VariableIndicator(argName); // TODO this memory needs free after process
-    varMap->set(target,argVal);
+    varMap->set(target, argVal);
+    TMP_DEBUGL;
   }
 
+  TMP_DEBUGL;
   auto ret = eval_node_codegen(f->body, new_scope);
+  TMP_DEBUGL;
 
   func->makeReturn(ret);
 
@@ -322,23 +335,32 @@ llvm::Value *exec_call_func_codegen(ASTNODE *ap, std::shared_ptr<MugichaScopeInf
 
   auto defArgs = funcInfo->def_args;
   if( defArgs ){
-    auto argType = getLLVMTypeByMugichaType(defArgs->type,context);
+    TMP_DEBUGL;
+    auto argType = getLLVMTypeByMugichaType(defArgs->type,scope);
+    TMP_DEBUGL;
     argTypes.push_back(argType);
+    TMP_DEBUGL;
   }
 
   if( ap->set_args ){ // TODO only single arg. multi arg requre.
+    TMP_DEBUGL;
     auto setValue = eval_node_codegen(ap->set_args->left, scope);
+    TMP_DEBUGL;
     argValues.push_back(setValue);
+    TMP_DEBUGL;
   }
+  TMP_DEBUGL;
 
-  auto retType = getLLVMTypeByMugichaType(funcInfo->type, context);
+  auto retType = getLLVMTypeByMugichaType(funcInfo->type, scope);
   llvm::FunctionType *funcType =
     llvm::FunctionType::get(retType, argTypes, true);
   llvm::Constant *callFunc =
     module->getModule()->getOrInsertFunction(funcInfo->sym->name, funcType);
 
+    TMP_DEBUGL;
   auto ret = module->getBuilder()->CreateCall(callFunc, argValues);
 
+  TMP_DEBUGL;
   return ret;
 }
 
@@ -613,7 +635,7 @@ llvm::Value *eval_node_value_codegen(ASTNODE *ap, std::shared_ptr<MugichaScopeIn
 {
   auto expr = scope->makeExprBuilder();
 
-  switch(ap->val.type){
+  switch(ap->val.type.kind){
     case INT:
       return expr->makeConst(ap->val.val.i);
       break;
@@ -655,4 +677,6 @@ extern "C" void mugicha_compile(ASTNODE *rootp)
   print_ast(0, rootp);
 
   do_compile(rootp);
+
+  DEBUGS("compile complete.");
 }

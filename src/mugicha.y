@@ -41,9 +41,7 @@ prog
     : /* empty */
     | stmt
     {
-      if( mugichaMode == Interpreter){
-        mugicha_main($1);
-      } else if( mugichaMode == Compiler){
+      if( mugichaMode == Compiler){
         mugicha_compile($1);
       } else if( mugichaMode == DisplayAst){
         display_ast($1);

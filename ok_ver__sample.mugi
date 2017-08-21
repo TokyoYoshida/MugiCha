@@ -4,15 +4,16 @@ class TestX {
 }
 
 func test(var a TestX) int {
-  print(a.x)
-  print(a.y)
   0
 }
 
 func main() int {
   var y TestX
+  var z TestX
   y.x = 100
-  y.y = 1000.1
-  test(a = y)
+  y.y = 10000.1
+  z = y
+  print(y.x)
+  print(z.y)
   0
 }
