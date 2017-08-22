@@ -40,6 +40,8 @@ ASTNODE *make_ast_set_member_var(char *var_name, char *member_name, ASTNODE *new
 ASTNODE *make_ast_get_member_var(char *var_name, char *member_name);
 ASTNODE *make_ast_get_var(char *name);
 ASTNODE *make_ast_def_func(char *name, ASTNODE *def_args, char *type_name, ASTNODE *body);
+ASTNODE *make_ast_def_method(char *reciever_name, char *method_name, ASTNODE *def_args, char *type_name, ASTNODE *body);
+
 ASTNODE *make_ast_def_class(char *name, ASTNODE *def_vars,ASTNODE *def_funcs);
 
 ASTNODE *make_ast_call_func(char *name, ASTNODE *set_args);

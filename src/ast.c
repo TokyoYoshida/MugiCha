@@ -202,6 +202,25 @@ ASTNODE *make_ast_def_func(char *name, ASTNODE *def_args, char *type_name, ASTNO
     return np;
 }
 
+ASTNODE *make_ast_def_method(char *reciever_name, char *method_name, ASTNODE *def_args, char *type_name, ASTNODE *body)
+{
+  ASTNODE *np;
+
+
+  np = make_astnode();
+
+  // TODO: write code after this
+  // np->type.kind =  get_type_by_name(type_name);
+  // np->op         = DEF_FUNC;
+  // np->sym        = lookup_make_symbol(name);
+  // np->left       = NULL;
+  // np->right      = NULL;
+
+  // make_func(np->sym, np->type, np, body, def_args);
+
+  return np;
+}
+
 ASTNODE *make_ast_def_class(char *name, ASTNODE *def_vars, ASTNODE *def_funcs)
 {
   ASTNODE *np;
