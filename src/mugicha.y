@@ -108,10 +108,12 @@ def_func
 def_method
     : FUNCTION NAME '.' NAME '(' def_var ')' NAME '{' stmt '}'
     {
+    TMP_DEBUGL;
     $$ = make_ast_def_method($2, $4, $6, $8, $10);
     }
     | FUNCTION NAME '.' NAME '(' ')' NAME '{' stmt '}'
     {
+    TMP_DEBUGL;
     $$ = make_ast_def_method($2, $4, NULL, $7, $9);
     }
     ;

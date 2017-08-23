@@ -3,9 +3,7 @@ class TestX {
   var y double
 }
 
-func test(var a TestX) int {
-  print(a.x)
-  print(a.y)
+func TestX.test(var a int) int {
   0
 }
 
@@ -13,6 +11,5 @@ func main() int {
   var y TestX
   y.x = 100
   y.y = 1000.1
-  test(a = y)
   0
 }
