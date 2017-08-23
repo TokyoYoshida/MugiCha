@@ -29,7 +29,6 @@ FUNC *make_func(SYMBOL *s, TYPE type, ASTNODE *def, ASTNODE *body, ASTNODE *def_
 {
   if( pos == FUNC_MAX) ASSERT_FAIL("out of bounds.");
 
-  funcs[pos].reciever_sym = NULL;
   funcs[pos].sym = s;
   funcs[pos].type =  type;
   funcs[pos].def = def;
@@ -39,11 +38,11 @@ FUNC *make_func(SYMBOL *s, TYPE type, ASTNODE *def, ASTNODE *body, ASTNODE *def_
   return &funcs[pos++];
 }
 
-FUNC *make_method(SYMBOL *reciever_s, SYMBOL *s, TYPE type, ASTNODE *def, ASTNODE *body, ASTNODE *def_args)
+FUNC *make_method(TYPE reciever_type, SYMBOL *s, TYPE type, ASTNODE *def, ASTNODE *body, ASTNODE *def_args)
 {
   if( pos == FUNC_MAX) ASSERT_FAIL("out of bounds.");
 
-  funcs[pos].reciever_sym = reciever_s;
+  funcs[pos].reciever_type = reciever_type;
   funcs[pos].sym = s;
   funcs[pos].type =  type;
   funcs[pos].def = def;
