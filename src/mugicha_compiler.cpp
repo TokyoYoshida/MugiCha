@@ -330,12 +330,13 @@ llvm::Value *exec_def_method_codegen(ASTNODE *ap, std::shared_ptr<MugichaScopeIn
 
   auto defArgs = funcInfo->def_args;
   if( defArgs ){
+    TMP_DEBUGL;
     auto recieverType = getLLVMTypeByMugichaType(ap->reciever_type, new_scope);
+    TMP_DEBUGL;
     argTypes.push_back(recieverType);
+    TMP_DEBUGL;
     auto argType = getLLVMTypeByMugichaType(defArgs->type, new_scope);
-    TMP_DEBUGL;
     argTypes.push_back(argType);
-    TMP_DEBUGL;
   }
 
   auto retType = getLLVMTypeByMugichaType(funcInfo->type, new_scope);
