@@ -12,6 +12,7 @@ typedef struct _ASTNODE {
     VALUE         val;
     SYMBOL        *sym;
     SYMBOL        *member;
+    SYMBOL        *reciever_sym;
     struct _ASTNODE *left;
     struct _ASTNODE *right;
     struct _ASTNODE *set_args;

@@ -206,17 +206,16 @@ ASTNODE *make_ast_def_method(char *reciever_name, char *method_name, ASTNODE *de
 {
   ASTNODE *np;
 
-
   np = make_astnode();
 
-  // TODO: write code after this
-  // np->type.kind =  get_type_by_name(type_name);
-  // np->op         = DEF_FUNC;
-  // np->sym        = lookup_make_symbol(name);
-  // np->left       = NULL;
-  // np->right      = NULL;
+  np->reciever_sym = lookup_make_symbol(reciever_name);
+  np->type.kind =  get_type_by_name(type_name);
+  np->op         = DEF_FUNC;
+  np->sym        = lookup_make_symbol(method_name);
+  np->left       = NULL;
+  np->right      = NULL;
 
-  // make_func(np->sym, np->type, np, body, def_args);
+  make_method(np->reciever_sym, np->sym, np->type, np, body, def_args);
 
   return np;
 }

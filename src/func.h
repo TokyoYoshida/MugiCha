@@ -10,6 +10,7 @@
 
 typedef struct _FUNC {
   SYMBOL *sym;
+  SYMBOL *reciever_sym;
   ASTNODE *def;
   ASTNODE *body;
   TYPE type;
@@ -28,6 +29,7 @@ void set_func_pos(int newpos);
 int get_func_pos();
 FUNC *lookup_func(SYMBOL *s);
 FUNC *make_func(SYMBOL *s, TYPE type, ASTNODE *def, ASTNODE *body, ASTNODE *def_args);
+FUNC *make_method(SYMBOL *reciever_s, SYMBOL *s, TYPE type, ASTNODE *def, ASTNODE *body, ASTNODE *def_args);
 
 #ifdef __cplusplus
 }
