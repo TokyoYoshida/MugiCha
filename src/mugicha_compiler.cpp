@@ -355,7 +355,12 @@ llvm::Value *exec_def_method_codegen(ASTNODE *ap, std::shared_ptr<MugichaScopeIn
   if( defArgs ){
     TMP_DEBUGL;
     auto iter = argList.begin();
-    llvm::Value *argVal = static_cast<llvm::Value*>( &*iter);
+    llvm::Value *recieverVal = static_cast<llvm::Value*>( &*iter);
+    varMap->makeVariable("this", ap->reciever_type);
+    auto reciever = new VariableIndicator("this");
+    varMap->set(reciever, recieverVal);
+
+    llvm::Value *argVal = static_cast<llvm::Value*>( &*++iter);
 
     auto argName =defArgs->sym->name;
     varMap->makeVariable(argName, defArgs->type);
