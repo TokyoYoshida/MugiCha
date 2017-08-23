@@ -348,7 +348,6 @@ void print_astnode(int depth, ASTNODE *np)
   if(np->op == DEF_VAR){
     printf("/ val symbol : %s / ",symbol_description(np->sym));
   }
-  DEBUGP(np->sym);
   if(np->op == DEF_FUNC){
     printf("/ func symbol : %s / ",symbol_description(np->sym));
   }
