@@ -317,6 +317,60 @@ llvm::Value *exec_def_func_codegen(ASTNODE *ap, std::shared_ptr<MugichaScopeInfo
   return ret;
 }
 
+llvm::Value *exec_def_method_codegen(ASTNODE *ap, std::shared_ptr<MugichaScopeInfo> old_scope)
+{
+  std::shared_ptr<MugichaScopeInfo> new_scope = std::make_shared<MugichaScopeInfo>(old_scope);
+
+  auto context = new_scope->getContext();
+  auto module = new_scope->getModule();
+
+  auto funcInfo = lookup_func(ap->sym);
+
+  std::vector<llvm::Type *> argTypes; // TODO : now arg is provisional.
+
+  auto defArgs = funcInfo->def_args;
+  if( defArgs ){
+    TMP_DEBUGI(defArgs->type.kind);
+    auto argType = getLLVMTypeByMugichaType(defArgs->type, new_scope);
+    TMP_DEBUGL;
+    argTypes.push_back(argType);
+    TMP_DEBUGL;
+  }
+
+  auto retType = getLLVMTypeByMugichaType(funcInfo->type, new_scope);
+  auto func_type =
+    llvm::FunctionType::get(retType, argTypes, false);
+
+  auto func = std::make_shared<LLVMFuncBuilder>(new_scope->getModuleBuilder(), func_type, funcInfo->sym->name);
+
+  auto f = lookup_func(ap->sym);
+
+  std::shared_ptr<LLVMExprBuilder> expr = std::make_shared<LLVMExprBuilder>(func);
+
+  auto &argList = func->getFunc()->getArgumentList();
+  auto varMap = new_scope->getVarMap();
+
+  if( defArgs ){
+    TMP_DEBUGL;
+    auto iter = argList.begin();
+    llvm::Value *argVal = static_cast<llvm::Value*>( &*iter);
+
+    auto argName =defArgs->sym->name;
+    varMap->makeVariable(argName, defArgs->type);
+    auto target = new VariableIndicator(argName); // TODO this memory needs free after process
+    varMap->set(target, argVal);
+    TMP_DEBUGL;
+  }
+
+  TMP_DEBUGL;
+  auto ret = eval_node_codegen(f->body, new_scope);
+  TMP_DEBUGL;
+
+  func->makeReturn(ret);
+
+  return ret;
+}
+
 llvm::Value *exec_call_func_codegen(ASTNODE *ap, std::shared_ptr<MugichaScopeInfo> scope)
 {
   auto module = scope->getModuleBuilder();
@@ -615,6 +669,8 @@ llvm::Value *eval_node_op_codegen(ASTNODE *ap, std::shared_ptr<MugichaScopeInfo>
       return exec_get_var_codegen(ap, scope);
     case DEF_FUNC:
     return exec_def_func_codegen(ap ,scope);
+    case DEF_METHOD:
+    return exec_def_method_codegen(ap ,scope);
     case CALL_FUNC:
     return exec_call_func_codegen(ap, scope);
     case DEF_CLASS:

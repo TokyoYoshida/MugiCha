@@ -210,7 +210,7 @@ ASTNODE *make_ast_def_method(char *reciever_name, char *method_name, ASTNODE *de
 
   np->reciever_sym = lookup_make_symbol(reciever_name);
   np->type.kind =  get_type_by_name(type_name);
-  np->op         = DEF_FUNC;
+  np->op         = DEF_METHOD;
   np->sym        = lookup_make_symbol(method_name);
   np->left       = NULL;
   np->right      = NULL;
