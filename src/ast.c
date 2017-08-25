@@ -326,8 +326,10 @@ ASTNODE *make_ast_get_member_var(char *var_name, char *member_name)
 
 TMP_DEBUGL;
 
-    s = lookup_symbol(var_name);
+    s = lookup_make_symbol(var_name);
     mems = lookup_symbol(member_name);
+
+TMP_DEBUGS(var_name);
 
     np = make_astnode();
 

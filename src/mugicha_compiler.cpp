@@ -97,8 +97,11 @@ llvm::IRBuilder<> *MugichaScopeInfo::getBuilder()
 
 std::shared_ptr<LLVMExprBuilder> MugichaScopeInfo::makeExprBuilder()
 {
+  TMP_DEBUGL;
   std::shared_ptr<LLVMExprBuilder> builder = std::make_shared<LLVMExprBuilder>(this->getFuncBuilder());
 
+  TMP_DEBUGL;
+  TMP_DEBUGP(builder.get());
   return builder;
 }
 
@@ -561,6 +564,10 @@ llvm::Value *exec_get_member_var_codegen(ASTNODE *ap , std::shared_ptr<MugichaSc
   TMP_DEBUGL;
   auto expr = scope->makeExprBuilder();
 
+  if(!ap->sym || !ap->member) ASSERT_FAIL_BLOCK();
+
+  TMP_DEBUGL;
+  TMP_DEBUGP(ap->sym);
   TMP_DEBUGS(ap->sym->name);
   TMP_DEBUGS(ap->member->name);
   auto target = (VariableIndicator *)new StructIndicator(ap->sym->name, ap->member->name);
