@@ -184,6 +184,22 @@ ASTNODE *make_ast_call_func(char *name, ASTNODE *set_args)
     return np;
 }
 
+ASTNODE *make_ast_call_method(char *reviever_name, char *method_name, ASTNODE *set_args)
+{
+    ASTNODE *np;
+    FUNC *f;
+
+    np = make_astnode();
+    np->type.kind =  ANY;
+    np->op         = CALL_METHOD;
+    np->reciever   = lookup_make_symbol(reviever_name);
+    np->sym        = lookup_make_symbol(method_name);
+    f = lookup_func(np->sym);
+    np->set_args       = set_args;
+
+    return np;
+}
+
 ASTNODE *make_ast_def_func(char *name, ASTNODE *def_args, char *type_name, ASTNODE *body)
 {
     ASTNODE *np;
@@ -200,6 +216,25 @@ ASTNODE *make_ast_def_func(char *name, ASTNODE *def_args, char *type_name, ASTNO
     make_func(np->sym, np->type, np, body, def_args);
 
     return np;
+}
+
+ASTNODE *make_ast_def_method(char *reciever_name, char *method_name, ASTNODE *def_args, char *type_name, ASTNODE *body)
+{
+  ASTNODE *np;
+
+  np = make_astnode();
+
+  np->reciever_type.kind = KLASS;
+  np->reciever_type.klass = lookup_make_symbol(reciever_name);
+  np->type.kind =  get_type_by_name(type_name);
+  np->op         = DEF_METHOD;
+  np->sym        = lookup_make_symbol(method_name);
+  np->left       = NULL;
+  np->right      = NULL;
+
+  make_method(np->reciever_type, np->sym, np->type, np, body, def_args);
+
+  return np;
 }
 
 ASTNODE *make_ast_def_class(char *name, ASTNODE *def_vars, ASTNODE *def_funcs)
@@ -291,8 +326,10 @@ ASTNODE *make_ast_get_member_var(char *var_name, char *member_name)
 
 TMP_DEBUGL;
 
-    s = lookup_symbol(var_name);
+    s = lookup_make_symbol(var_name);
     mems = lookup_symbol(member_name);
+
+TMP_DEBUGS(var_name);
 
     np = make_astnode();
 
@@ -329,7 +366,6 @@ void print_astnode(int depth, ASTNODE *np)
   if(np->op == DEF_VAR){
     printf("/ val symbol : %s / ",symbol_description(np->sym));
   }
-  DEBUGP(np->sym);
   if(np->op == DEF_FUNC){
     printf("/ func symbol : %s / ",symbol_description(np->sym));
   }

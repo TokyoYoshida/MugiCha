@@ -47,6 +47,8 @@
 
 llvm::Type *getLLVMTypeByMugichaType(TYPE type, std::shared_ptr<MugichaScopeInfo> scope) {
   switch(type.kind){
+    case ANY:
+      ASSERT_FAIL_BLOCK();
     case INT:
     case BOOLTYPE:
       return llvm::Type::getInt32Ty(*scope->getContext());
@@ -95,8 +97,11 @@ llvm::IRBuilder<> *MugichaScopeInfo::getBuilder()
 
 std::shared_ptr<LLVMExprBuilder> MugichaScopeInfo::makeExprBuilder()
 {
+  TMP_DEBUGL;
   std::shared_ptr<LLVMExprBuilder> builder = std::make_shared<LLVMExprBuilder>(this->getFuncBuilder());
 
+  TMP_DEBUGL;
+  TMP_DEBUGP(builder.get());
   return builder;
 }
 
@@ -317,6 +322,67 @@ llvm::Value *exec_def_func_codegen(ASTNODE *ap, std::shared_ptr<MugichaScopeInfo
   return ret;
 }
 
+llvm::Value *exec_def_method_codegen(ASTNODE *ap, std::shared_ptr<MugichaScopeInfo> old_scope)
+{
+  std::shared_ptr<MugichaScopeInfo> new_scope = std::make_shared<MugichaScopeInfo>(old_scope);
+
+  auto context = new_scope->getContext();
+  auto module = new_scope->getModule();
+
+  auto funcInfo = lookup_func(ap->sym);
+
+  std::vector<llvm::Type *> argTypes; // TODO : now arg is provisional.
+
+  auto defArgs = funcInfo->def_args;
+  if( defArgs ){
+    TMP_DEBUGL;
+    auto recieverType = getLLVMTypeByMugichaType(ap->reciever_type, new_scope);
+    TMP_DEBUGL;
+    argTypes.push_back(recieverType);
+    TMP_DEBUGL;
+    auto argType = getLLVMTypeByMugichaType(defArgs->type, new_scope);
+    argTypes.push_back(argType);
+  }
+
+  auto retType = getLLVMTypeByMugichaType(funcInfo->type, new_scope);
+  auto func_type =
+    llvm::FunctionType::get(retType, argTypes, false);
+
+  auto func = std::make_shared<LLVMFuncBuilder>(new_scope->getModuleBuilder(), func_type, funcInfo->sym->name);
+
+  auto f = lookup_func(ap->sym);
+
+  std::shared_ptr<LLVMExprBuilder> expr = std::make_shared<LLVMExprBuilder>(func);
+
+  auto &argList = func->getFunc()->getArgumentList();
+  auto varMap = new_scope->getVarMap();
+
+  if( defArgs ){
+    TMP_DEBUGL;
+    auto iter = argList.begin();
+    llvm::Value *recieverVal = static_cast<llvm::Value*>( &*iter);
+    varMap->makeVariable("this", ap->reciever_type);
+    auto reciever = new VariableIndicator("this");
+    varMap->set(reciever, recieverVal);
+
+    llvm::Value *argVal = static_cast<llvm::Value*>( &*++iter);
+
+    auto argName =defArgs->sym->name;
+    varMap->makeVariable(argName, defArgs->type);
+    auto target = new VariableIndicator(argName); // TODO this memory needs free after process
+    varMap->set(target, argVal);
+    TMP_DEBUGL;
+  }
+
+  TMP_DEBUGL;
+  auto ret = eval_node_codegen(f->body, new_scope);
+  TMP_DEBUGL;
+
+  func->makeReturn(ret);
+
+  return ret;
+}
+
 llvm::Value *exec_call_func_codegen(ASTNODE *ap, std::shared_ptr<MugichaScopeInfo> scope)
 {
   auto module = scope->getModuleBuilder();
@@ -343,6 +409,60 @@ llvm::Value *exec_call_func_codegen(ASTNODE *ap, std::shared_ptr<MugichaScopeInf
   }
 
   if( ap->set_args ){ // TODO only single arg. multi arg requre.
+    TMP_DEBUGL;
+    auto setValue = eval_node_codegen(ap->set_args->left, scope);
+    TMP_DEBUGL;
+    argValues.push_back(setValue);
+    TMP_DEBUGL;
+  }
+  TMP_DEBUGL;
+
+  auto retType = getLLVMTypeByMugichaType(funcInfo->type, scope);
+  llvm::FunctionType *funcType =
+    llvm::FunctionType::get(retType, argTypes, true);
+  llvm::Constant *callFunc =
+    module->getModule()->getOrInsertFunction(funcInfo->sym->name, funcType);
+
+    TMP_DEBUGL;
+  auto ret = module->getBuilder()->CreateCall(callFunc, argValues);
+
+  TMP_DEBUGL;
+  return ret;
+}
+
+llvm::Value *exec_call_method_codegen(ASTNODE *ap, std::shared_ptr<MugichaScopeInfo> scope)
+{
+  auto module = scope->getModuleBuilder();
+
+// TODO argument
+  // if( ap->set_args != NULL){
+  //   eval_node(f->def_args);
+  //   eval_node(ap->set_args);
+  // }
+
+  std::vector<llvm::Value *> argValues;
+  std::vector<llvm::Type *> argTypes;
+
+  auto context = module->getContext();
+  auto funcInfo = lookup_func(ap->sym);
+
+  auto defArgs = funcInfo->def_args;
+  if( defArgs ){
+    auto recieverVal = scope->getVarMap()->getVariable(ap->reciever->name);
+    auto recieverType = getLLVMTypeByMugichaType(recieverVal->getType(), scope);
+    argTypes.push_back(recieverType);
+    TMP_DEBUGL;
+    auto argType = getLLVMTypeByMugichaType(defArgs->type, scope);
+    TMP_DEBUGL;
+    argTypes.push_back(argType);
+    TMP_DEBUGL;
+  }
+
+  if( ap->set_args ){ // TODO only single arg. multi arg requre.
+    TMP_DEBUGS(ap->reciever->name);
+    auto target = new VariableIndicator(ap->reciever->name);
+    auto recieverVal = scope->getVarMap()->get(target);
+    argValues.push_back(recieverVal);
     TMP_DEBUGL;
     auto setValue = eval_node_codegen(ap->set_args->left, scope);
     TMP_DEBUGL;
@@ -441,8 +561,15 @@ llvm::Value *exec_set_member_var_codegen(ASTNODE *ap , std::shared_ptr<MugichaSc
 
 llvm::Value *exec_get_member_var_codegen(ASTNODE *ap , std::shared_ptr<MugichaScopeInfo> scope)
 {
+  TMP_DEBUGL;
   auto expr = scope->makeExprBuilder();
 
+  if(!ap->sym || !ap->member) ASSERT_FAIL_BLOCK();
+
+  TMP_DEBUGL;
+  TMP_DEBUGP(ap->sym);
+  TMP_DEBUGS(ap->sym->name);
+  TMP_DEBUGS(ap->member->name);
   auto target = (VariableIndicator *)new StructIndicator(ap->sym->name, ap->member->name);
   auto ret = scope->getVarMap()->get(target);
 
@@ -615,8 +742,12 @@ llvm::Value *eval_node_op_codegen(ASTNODE *ap, std::shared_ptr<MugichaScopeInfo>
       return exec_get_var_codegen(ap, scope);
     case DEF_FUNC:
     return exec_def_func_codegen(ap ,scope);
+    case DEF_METHOD:
+    return exec_def_method_codegen(ap ,scope);
     case CALL_FUNC:
     return exec_call_func_codegen(ap, scope);
+    case CALL_METHOD:
+    return exec_call_method_codegen(ap, scope);
     case DEF_CLASS:
     return exec_def_class_codegen(ap ,scope);
     case SET_MEMBER_VAR:
