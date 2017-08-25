@@ -680,6 +680,8 @@ llvm::Value *eval_node_op_codegen(ASTNODE *ap, std::shared_ptr<MugichaScopeInfo>
     return exec_def_method_codegen(ap ,scope);
     case CALL_FUNC:
     return exec_call_func_codegen(ap, scope);
+    case CALL_METHOD:
+    ASSERT_FAIL("method");
     case DEF_CLASS:
     return exec_def_class_codegen(ap ,scope);
     case SET_MEMBER_VAR:
