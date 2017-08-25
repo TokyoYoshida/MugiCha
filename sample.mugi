@@ -11,6 +11,6 @@ func main() int {
   var y TestX
   y.x = 100
   y.y = 1000.1
-  x.test(a = 10)
+  y.test(a = 10)
   0
 }
