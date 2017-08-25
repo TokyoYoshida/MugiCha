@@ -453,6 +453,7 @@ llvm::Value *exec_call_method_codegen(ASTNODE *ap, std::shared_ptr<MugichaScopeI
   }
 
   if( ap->set_args ){ // TODO only single arg. multi arg requre.
+    TMP_DEBUGS(ap->reciever->name);
     auto target = new VariableIndicator(ap->reciever->name);
     auto recieverVal = scope->getVarMap()->get(target);
     argValues.push_back(recieverVal);
