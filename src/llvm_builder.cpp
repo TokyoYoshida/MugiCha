@@ -232,7 +232,7 @@ llvm::Value *LLVMVariable::get(){
   return module_->getBuilder()->CreateLoad(value_);
 }
 
-TYPE *LLVMVariable::getType(){
+TYPE LLVMVariable::getType(){
   return type_;
 }
 

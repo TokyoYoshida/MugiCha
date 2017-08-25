@@ -445,9 +445,9 @@ llvm::Value *exec_call_method_codegen(ASTNODE *ap, std::shared_ptr<MugichaScopeI
 
   auto defArgs = funcInfo->def_args;
   if( defArgs ){
-    auto target = new VariableIndicator(ap->reciever->name);
-    auto recieverVal = scope->getVarMap()->get(target);
-    auto recieverType = getLLVMTypeByMugichaType(ap->reciever_type, scope);
+    auto recieverVal = scope->getVarMap()->getVariable(ap->reciever->name);
+    TYPE type = recieverVal->getType();
+    auto recieverType = getLLVMTypeByMugichaType(type, scope);
     argTypes.push_back(recieverType);
     TMP_DEBUGL;
     auto argType = getLLVMTypeByMugichaType(defArgs->type, scope);
