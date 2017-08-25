@@ -154,6 +154,7 @@ expr
     | expr_double
     | expr_string
     | call_func
+    | call_method
     | primary_get_variable
     | primary_get_member_var
     | expr '+' expr
@@ -184,13 +185,13 @@ call_func
     }
     ;
 call_method
-    : NAME '(' set_var ')'
+    : NAME '.' NAME '(' set_var ')'
     {
-    $$ = make_ast_call_func($1, $3);
+    $$ = make_ast_call_method($1, $3, $5);
     }
     | NAME '(' ')'
     {
-    $$ = make_ast_call_func($1, NULL);
+    $$ = make_ast_call_method($1, $3, NULL);
     }
     ;
 expr_print
