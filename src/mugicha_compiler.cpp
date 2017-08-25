@@ -425,6 +425,58 @@ llvm::Value *exec_call_func_codegen(ASTNODE *ap, std::shared_ptr<MugichaScopeInf
   return ret;
 }
 
+llvm::Value *exec_call_method_codegen(ASTNODE *ap, std::shared_ptr<MugichaScopeInfo> scope)
+{
+  auto module = scope->getModuleBuilder();
+
+// TODO argument
+  // if( ap->set_args != NULL){
+  //   eval_node(f->def_args);
+  //   eval_node(ap->set_args);
+  // }
+
+  std::vector<llvm::Value *> argValues;
+  std::vector<llvm::Type *> argTypes;
+
+  auto context = module->getContext();
+  auto funcInfo = lookup_func(ap->sym);
+
+  auto defArgs = funcInfo->def_args;
+  if( defArgs ){
+    auto recieverType = getLLVMTypeByMugichaType(ap->reciever_type, scope);
+    argTypes.push_back(recieverType);
+    TMP_DEBUGL;
+    auto argType = getLLVMTypeByMugichaType(defArgs->type,scope);
+    TMP_DEBUGL;
+    argTypes.push_back(argType);
+    TMP_DEBUGL;
+  }
+
+  if( ap->set_args ){ // TODO only single arg. multi arg requre.
+    auto target = new VariableIndicator(ap->reciever->name);
+    auto recieverVal = scope->getVarMap()->get(target);
+    argValues.push_back(recieverVal);
+    TMP_DEBUGL;
+    auto setValue = eval_node_codegen(ap->set_args->left, scope);
+    TMP_DEBUGL;
+    argValues.push_back(setValue);
+    TMP_DEBUGL;
+  }
+  TMP_DEBUGL;
+
+  auto retType = getLLVMTypeByMugichaType(funcInfo->type, scope);
+  llvm::FunctionType *funcType =
+    llvm::FunctionType::get(retType, argTypes, true);
+  llvm::Constant *callFunc =
+    module->getModule()->getOrInsertFunction(funcInfo->sym->name, funcType);
+
+    TMP_DEBUGL;
+  auto ret = module->getBuilder()->CreateCall(callFunc, argValues);
+
+  TMP_DEBUGL;
+  return ret;
+}
+
 LLVMStructDef::FieldDef getFieldDef(llvm::Module *module, ASTNODE *ap)
 {
 
@@ -681,7 +733,7 @@ llvm::Value *eval_node_op_codegen(ASTNODE *ap, std::shared_ptr<MugichaScopeInfo>
     case CALL_FUNC:
     return exec_call_func_codegen(ap, scope);
     case CALL_METHOD:
-    ASSERT_FAIL("method");
+    return exec_call_method_codegen(ap, scope);
     case DEF_CLASS:
     return exec_def_class_codegen(ap ,scope);
     case SET_MEMBER_VAR:
