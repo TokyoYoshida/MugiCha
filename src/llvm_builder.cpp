@@ -198,6 +198,7 @@ llvm::Instruction *LLVMExprBuilder::makeCalcOp(llvm::AddrSpaceCastInst::BinaryOp
 }
 
 LLVMVariable::LLVMVariable(std::shared_ptr<LLVMModuleBuilder> module, std::string name, TYPE type, std::shared_ptr<LLVMStructDefMap> struct_def_map){
+  type_ = type;
   module_ = module;
 
   TMP_DEBUGI(type.kind);
@@ -229,6 +230,10 @@ TMP_DEBUGL;
 llvm::Value *LLVMVariable::get(){
   TMP_DEBUGL;
   return module_->getBuilder()->CreateLoad(value_);
+}
+
+TYPE LLVMVariable::getType(){
+  return type_;
 }
 
 LLVMStructDef::LLVMStructDef(std::shared_ptr<LLVMModuleBuilder> module, std::string def_name, FieldDef fields){

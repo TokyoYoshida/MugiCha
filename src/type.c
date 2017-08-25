@@ -31,7 +31,7 @@ char *value_description(VALUE val)
 
 char *get_type_description(TYPEKIND i)
 {
-  static char *type_a[] = {"ANY", "INT", "DOUBLE","BOOLTYPE","STRING"};
+  static char *type_a[] = {"ANY", "INT", "DOUBLE","BOOLTYPE","STRING","KLASS"};
 
   if(i > STRING ) ASSERT_FAIL("out of bounds");
 
@@ -41,9 +41,7 @@ char *get_type_description(TYPEKIND i)
 char *get_op_description(OPERATION i)
 {
   static char *op_a[]   = {"NONE", "VALUEDATA", "ADD", "SUB", "MUL", "DIV", "SEQ",
-    "PRINTDATA", "DEF_VAR", "SET_VAR", "GET_VAR","DEF_FUNC", "CALL_FUNC","CMP_EQ",
-    "CMP_NOTEQ", "CMP_GREATER", "CMP_SMALLE", "CMP_GREATEREQ", "CMP_SMALLEEQ",
-    "IF_STMT","WHILE_STMT","DEF_CLASS"};
+    "PRINTDATA", "DEF_VAR", "SET_VAR", "GET_VAR", "DEF_FUNC", "DEF_METHOD", "CALL_FUNC", "CALL_METHOD","CMP_EQ", "CMP_NOTEQ", "CMP_GREATER", "CMP_SMALLE", "CMP_GREATEREQ", "CMP_SMALLEEQ", "IF_STMT","WHILE_STMT","SET_MEMBER_VAR", "GET_MEMBER_VAR", "DEF_CLASS"};
 
   if(i > DEF_CLASS) ASSERT_FAIL("out of bounds");
 

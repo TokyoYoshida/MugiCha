@@ -23,7 +23,7 @@ int yydebug=1;
 %token SMALLEREQUAL GREATEREQUAL IF ELSE WHILE
 %type <np> prog stmt expr expr_print def_var set_var set_member_var
 %type <np> def_class def_vars def_funcs
-%type <np> def_func call_func primary_bool expr_cmp_eq expr_cmp_noteq
+%type <np> def_func call_func def_method call_method primary_bool expr_cmp_eq expr_cmp_noteq
 %type <np> expr_cmp_greater expr_cmp_smaller expr_cmp_greaterequal expr_cmp_smallerequal
 %type <np> if_stmt expr_bool while_stmt primary_double expr_double primary_string
 %type <np> expr_string expr_int primary_int primary_get_variable primary_get_member_var
@@ -54,6 +54,7 @@ stmt
     | set_var
     | set_member_var
     | def_func
+    | def_method
     | def_class
     | if_stmt
     | while_stmt
@@ -104,6 +105,18 @@ def_func
     $$ = make_ast_def_func($2, NULL, $5, $7);
     }
     ;
+def_method
+    : FUNCTION NAME '.' NAME '(' def_var ')' NAME '{' stmt '}'
+    {
+    TMP_DEBUGL;
+    $$ = make_ast_def_method($2, $4, $6, $8, $10);
+    }
+    | FUNCTION NAME '.' NAME '(' ')' NAME '{' stmt '}'
+    {
+    TMP_DEBUGL;
+    $$ = make_ast_def_method($2, $4, NULL, $7, $9);
+    }
+    ;
 def_var
     : VAR NAME NAME
     {
@@ -141,6 +154,7 @@ expr
     | expr_double
     | expr_string
     | call_func
+    | call_method
     | primary_get_variable
     | primary_get_member_var
     | expr '+' expr
@@ -168,6 +182,16 @@ call_func
     | NAME '(' ')'
     {
     $$ = make_ast_call_func($1, NULL);
+    }
+    ;
+call_method
+    : NAME '.' NAME '(' set_var ')'
+    {
+    $$ = make_ast_call_method($1, $3, $5);
+    }
+    | NAME '(' ')'
+    {
+    $$ = make_ast_call_method($1, NULL, NULL);
     }
     ;
 expr_print
