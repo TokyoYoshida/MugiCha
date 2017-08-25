@@ -558,8 +558,11 @@ llvm::Value *exec_set_member_var_codegen(ASTNODE *ap , std::shared_ptr<MugichaSc
 
 llvm::Value *exec_get_member_var_codegen(ASTNODE *ap , std::shared_ptr<MugichaScopeInfo> scope)
 {
+  TMP_DEBUGL;
   auto expr = scope->makeExprBuilder();
 
+  TMP_DEBUGS(ap->sym->name);
+  TMP_DEBUGS(ap->member->name);
   auto target = (VariableIndicator *)new StructIndicator(ap->sym->name, ap->member->name);
   auto ret = scope->getVarMap()->get(target);
 

@@ -4,6 +4,7 @@ class TestX {
 }
 
 func TestX.test(var a int) int {
+  print(this.x)
   0
 }
 
@@ -11,6 +12,6 @@ func main() int {
   var y TestX
   y.x = 100
   y.y = 1000.1
-  y.test(a = 10)
+  y.test(a = 100)
   0
 }
