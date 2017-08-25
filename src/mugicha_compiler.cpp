@@ -47,6 +47,8 @@
 
 llvm::Type *getLLVMTypeByMugichaType(TYPE type, std::shared_ptr<MugichaScopeInfo> scope) {
   switch(type.kind){
+    case ANY:
+      ASSERT_FAIL_BLOCK();
     case INT:
     case BOOLTYPE:
       return llvm::Type::getInt32Ty(*scope->getContext());
@@ -443,10 +445,12 @@ llvm::Value *exec_call_method_codegen(ASTNODE *ap, std::shared_ptr<MugichaScopeI
 
   auto defArgs = funcInfo->def_args;
   if( defArgs ){
+    auto target = new VariableIndicator(ap->reciever->name);
+    auto recieverVal = scope->getVarMap()->get(target);
     auto recieverType = getLLVMTypeByMugichaType(ap->reciever_type, scope);
     argTypes.push_back(recieverType);
     TMP_DEBUGL;
-    auto argType = getLLVMTypeByMugichaType(defArgs->type,scope);
+    auto argType = getLLVMTypeByMugichaType(defArgs->type, scope);
     TMP_DEBUGL;
     argTypes.push_back(argType);
     TMP_DEBUGL;

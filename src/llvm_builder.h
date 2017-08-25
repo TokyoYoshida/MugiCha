@@ -64,6 +64,7 @@ class LLVMStructDefMap;
 
 class LLVMVariable {
   protected:
+  TYPE type_;
   std::shared_ptr<LLVMModuleBuilder> module_;
   llvm::Value *value_;
 
@@ -73,6 +74,8 @@ class LLVMVariable {
   virtual void set(llvm::Value *newVal);
 
   virtual llvm::Value *get();
+
+  TYPE getType();
 };
 
 class LLVMStructDef {
