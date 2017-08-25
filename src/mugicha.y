@@ -191,7 +191,7 @@ call_method
     }
     | NAME '(' ')'
     {
-    $$ = make_ast_call_method($1, $3, NULL);
+    $$ = make_ast_call_method($1, NULL, NULL);
     }
     ;
 expr_print

@@ -184,6 +184,22 @@ ASTNODE *make_ast_call_func(char *name, ASTNODE *set_args)
     return np;
 }
 
+ASTNODE *make_ast_call_method(char *reviever_name, char *method_name, ASTNODE *set_args)
+{
+    ASTNODE *np;
+    FUNC *f;
+
+    np = make_astnode();
+    np->type.kind =  ANY;
+    np->op         = CALL_METHOD;
+    np->reciever   = lookup_make_symbol(reviever_name);
+    np->sym        = lookup_make_symbol(method_name);
+    f = lookup_func(np->sym);
+    np->set_args       = set_args;
+
+    return np;
+}
+
 ASTNODE *make_ast_def_func(char *name, ASTNODE *def_args, char *type_name, ASTNODE *body)
 {
     ASTNODE *np;
