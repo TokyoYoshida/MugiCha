@@ -1,0 +1,18 @@
+class TestX {
+  var x int
+  var y double
+}
+
+func TestX.test(var a int) int {
+  this.y = this.y + 0.1
+  0
+}
+
+func main() int {
+  var y TestX
+  y.x = 100
+  y.y = 1000.1
+  y.test(a = 100)
+  print(y.y)
+  0
+}
