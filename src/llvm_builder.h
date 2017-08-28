@@ -78,11 +78,17 @@ class LLVMVariable {
   TYPE getType();
 };
 
+class FieldDefElem {
+public:
+  std::string name;
+  TYPE type;
+};
+
 class LLVMStructDef {
   public:
     // using FieldDef = std::map<std::string, llvm::Type*>;
     std::shared_ptr<LLVMModuleBuilder> module_;
-    using FieldDef = std::map<std::string, TYPE>;
+    using FieldDef = std::vector<FieldDefElem>;
     llvm::StructType *structTy;
     std::string def_name_;
     FieldDef fields_;
@@ -94,7 +100,7 @@ class LLVMStructDef {
     llvm::PointerType *getStructPtr();
     std::string getDefName();
 
-    int filedName2Index(std::string filed_name);
+    int filedName2Index(std::string field_name);
 };
 
 class LLVMStructDefMap {

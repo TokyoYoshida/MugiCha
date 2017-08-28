@@ -45,6 +45,8 @@
 
 #include "llvm_builder.h"
 
+ASTNODE *global_ast_rootp;
+
 llvm::Type *getLLVMTypeByMugichaType(TYPE type, std::shared_ptr<MugichaScopeInfo> scope) {
   switch(type.kind){
     case ANY:
@@ -486,24 +488,46 @@ llvm::Value *exec_call_method_codegen(ASTNODE *ap, std::shared_ptr<MugichaScopeI
 
 LLVMStructDef::FieldDef getFieldDef(llvm::Module *module, ASTNODE *ap)
 {
+  if(!ap){
+    LLVMStructDef::FieldDef f = {};
+
+    TMP_DEBUGL;
+    return f;
+  }
 
   if(ap->op == DEF_VAR){
+    TMP_DEBUGS(ap->sym->name);
     LLVMStructDef::FieldDef f = {{
       ap->sym->name,
       ap->type
     }};
 
     return f;
-  } else {
-    LLVMStructDef::FieldDef ret;
-
-    auto l = getFieldDef(module, ap->left);
-    auto r = getFieldDef(module, ap->right);
-    ret.insert(l.begin(), l.end());
-    ret.insert(r.begin(), r.end());
-
-    return ret;
   }
+  TMP_DEBUGL;
+  LLVMStructDef::FieldDef ret;
+
+  TMP_DEBUGL;
+  if(ap->super_class){
+    TMP_DEBUGL;
+    ASTNODE *sp = search_ast_by_sym(global_ast_rootp, ap->super_class->name);
+    TMP_DEBUGL;
+    if(!sp) ASSERT_FAIL_BLOCK();
+    TMP_DEBUGL;
+    auto s = getFieldDef(module, sp);
+    TMP_DEBUGL;
+    if(!s.empty()) ret.insert(ret.end(), s.begin(), s.end());
+    TMP_DEBUGL;
+  }
+  TMP_DEBUGL;
+  auto d = getFieldDef(module, ap->def_vars);
+  ret.insert(ret.end(), d.begin(), d.end());
+  auto l = getFieldDef(module, ap->left);
+  ret.insert(ret.end(), l.begin(), l.end());
+  auto r = getFieldDef(module, ap->right);
+  ret.insert(ret.end(), r.begin(), r.end());
+
+  return ret;
 }
 
 llvm::Value *exec_def_class_codegen(ASTNODE *ap, std::shared_ptr<MugichaScopeInfo> scope)
@@ -515,6 +539,7 @@ TMP_DEBUGL;
   TMP_DEBUGL;
   auto module = scope->getModule();
   TMP_DEBUGL;
+  TMP_DEBUGS(ap->sym->name);
 
   llvm::FunctionType *FT =
     llvm::FunctionType::get(llvm::Type::getInt32Ty(*context), /*not vararg*/false);
@@ -532,8 +557,12 @@ TMP_DEBUGL;
   //   {"x" ,INT},
   //   {"y" ,INT},
   // };
-  auto fields = getFieldDef(module, ap->def_vars);
+  auto fields = getFieldDef(module, ap);
   TMP_DEBUGL;
+
+  if(fields.empty()){
+    ASSERT_FAIL_BLOCK();
+  }
 
   scope->getStructDefMap()->makeStructDef(ap->sym->name, fields);
 
@@ -796,6 +825,7 @@ void do_compile(ASTNODE *ast_rootp)
   DEBUGL;
   std::shared_ptr<MugichaScopeInfo> scope = std::make_shared<MugichaScopeInfo>();
 
+  global_ast_rootp = ast_rootp;
   DEBUGL;
   eval_node_codegen(ast_rootp, scope);
   //
