@@ -19,10 +19,10 @@ int yydebug=1;
 }
 %token <np>      DOUBLE_LITERAL INT_LITERAL BOOL_LITERAL STRING_LITERAL
 %token <str>     NAME
-%token '+' '-' '*' '/' '\n' '(' ')' '.' '=' EQUAL PRINT VAR FUNCTION CLASSDEF NOTEQUAL '!' '<' '>' '\"'
+%token '+' '-' '*' '/' '\n' '(' ')' '.' ':' '=' EQUAL PRINT VAR FUNCTION CLASSDEF NOTEQUAL '!' '<' '>' '\"'
 %token SMALLEREQUAL GREATEREQUAL IF ELSE WHILE
 %type <np> prog stmt expr expr_print def_var set_var set_member_var
-%type <np> def_class def_vars def_funcs
+%type <np> def_class def_vars
 %type <np> def_func call_func def_method call_method primary_bool expr_cmp_eq expr_cmp_noteq
 %type <np> expr_cmp_greater expr_cmp_smaller expr_cmp_greaterequal expr_cmp_smallerequal
 %type <np> if_stmt expr_bool while_stmt primary_double expr_double primary_string
@@ -64,15 +64,7 @@ stmt
     }
     ;
 def_class
-    : CLASSDEF NAME '{' def_vars def_funcs '}'
-    {
-    $$ = make_ast_def_class($2, $4, $5);
-    }
-    | CLASSDEF NAME '{' def_vars '}'
-    {
-    $$ = make_ast_def_class($2, $4, NULL);
-    }
-    | CLASSDEF NAME '{' def_funcs '}'
+    : CLASSDEF NAME '{' def_vars '}'
     {
     $$ = make_ast_def_class($2, NULL, $4);
     }
@@ -80,17 +72,18 @@ def_class
     {
     $$ = make_ast_def_class($2, NULL, NULL);
     }
+    | CLASSDEF NAME ':' NAME '{' def_vars '}'
+    {
+    $$ = make_ast_def_class($2, $4, $6);
+    }
+    | CLASSDEF NAME ':' NAME '{' '}'
+    {
+    $$ = make_ast_def_class($2, $4, NULL);
+    }
     ;
 def_vars
     : def_var
     | def_vars def_var
-    {
-    $$ = make_ast_op(SEQ, $1, $2);
-    }
-    ;
-def_funcs
-    : def_func
-    | def_funcs def_func
     {
     $$ = make_ast_op(SEQ, $1, $2);
     }

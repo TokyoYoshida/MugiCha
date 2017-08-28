@@ -43,6 +43,7 @@ void print_op(ASTNODE *np){
 "{"		return '{';
 "}"		return '}';
 "."		return '.';
+":"		return ':';
 "="		return '=';
 "=="	return EQUAL;
 "!="	return NOTEQUAL;

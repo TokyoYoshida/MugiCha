@@ -10,6 +10,7 @@ ASTNODE *make_astnode(){
   p = (ASTNODE *)malloc(sizeof(ASTNODE));
   if(!p) ASSERT_FAIL("memory error");
 
+  p->super_class = NULL;
   p->type.kind =  ANY;
   p->op = NONE;
   p->val.val.v = NULL;
@@ -237,18 +238,18 @@ ASTNODE *make_ast_def_method(char *reciever_name, char *method_name, ASTNODE *de
   return np;
 }
 
-ASTNODE *make_ast_def_class(char *name, ASTNODE *def_vars, ASTNODE *def_funcs)
+ASTNODE *make_ast_def_class(char *name, char *super_name, ASTNODE *def_vars)
 {
   ASTNODE *np;
 
 
   np = make_astnode();
 
-  np->type.kind =  ANY;
-  np->op         = DEF_CLASS;
-  np->sym        = lookup_make_symbol(name);
-  np->def_vars   = def_vars;
-  np->def_funcs  = def_funcs;
+  np->type.kind   =  ANY;
+  np->op          = DEF_CLASS;
+  np->sym         = lookup_make_symbol(name);
+  np->super_class = super_name ? lookup_make_symbol(super_name) : NULL;
+  np->def_vars    = def_vars;
 
   return np;
 }
@@ -347,6 +348,30 @@ TMP_DEBUGS(var_name);
     return np;
 }
 
+ASTNODE *search_ast_by_sym(ASTNODE *ap, char *sym_name)
+{
+  if(!ap) return NULL;
+
+  if(ap->sym){
+    if(!strcmp(ap->sym->name, sym_name)){
+      return ap;
+    }
+  }
+
+  TMP_DEBUGL;
+
+  ASTNODE *l = search_ast_by_sym(ap->left, sym_name);
+  if(l) return l;
+
+  TMP_DEBUGL;
+  ASTNODE *r = search_ast_by_sym(ap->right, sym_name);
+  if(r) return r;
+
+  TMP_DEBUGL;
+  return NULL;
+}
+
+
 void print_astnode(int depth, ASTNODE *np)
 {
   int i;
@@ -387,7 +412,6 @@ void print_astnodeln(int depth, ASTNODE *np)
   print_astnode(depth, np);
   printf("\n");
 }
-
 
 void print_ast(int depth, ASTNODE *np)
 {

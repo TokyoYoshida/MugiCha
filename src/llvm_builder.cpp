@@ -244,8 +244,8 @@ LLVMStructDef::LLVMStructDef(std::shared_ptr<LLVMModuleBuilder> module, std::str
 
   std::vector<llvm::Type*> fieldsvec;
   for(auto itr = fields.begin(); itr != fields.end(); ++itr) {
-    auto fieldDef =  astType2LLVMType(module_, itr->second);
-    fieldsvec.push_back(fieldDef);
+    auto type =  astType2LLVMType(module_, itr->type);
+    fieldsvec.push_back(type);
   }
 
   structTy = llvm::StructType::create(fieldsvec, def_name, false);
@@ -264,9 +264,13 @@ std::string LLVMStructDef::getDefName(){
   return def_name_;
 }
 
-int LLVMStructDef::filedName2Index(std::string filed_name){
-  auto iter = fields_.find(filed_name);
-  return std::distance(fields_.begin(), iter);
+int LLVMStructDef::filedName2Index(std::string field_name){
+  for(auto itr = fields_.begin(); itr != fields_.end(); ++itr) {
+    if(itr->name == field_name){
+      return std::distance(fields_.begin(), itr);
+    }
+  }
+  ASSERT_FAIL_BLOCK();
 }
 
 LLVMStructDefMap::LLVMStructDefMap(std::shared_ptr<LLVMModuleBuilder> module){
@@ -307,6 +311,7 @@ void LLVMStruct::set(std::string member_name, llvm::Value *newVal){
 TMP_DEBUGL;
   auto iBuilder = module_->getBuilder();
 
+  TMP_DEBUGL;
   auto ptr = iBuilder->CreateLoad(value_);
   auto field_i = struct_def_->filedName2Index(member_name);
 

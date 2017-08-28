@@ -13,13 +13,13 @@ typedef struct _ASTNODE {
     SYMBOL        *sym;
     SYMBOL        *member;
     SYMBOL        *reciever;
+    SYMBOL        *super_class;
     TYPE          reciever_type;
     struct _ASTNODE *left;
     struct _ASTNODE *right;
     struct _ASTNODE *set_args;
     struct _ASTNODE *condition;
     struct _ASTNODE *def_vars;
-    struct _ASTNODE *def_funcs;
 } ASTNODE;
 
 #ifdef __cplusplus
@@ -45,11 +45,13 @@ ASTNODE *make_ast_def_func(char *name, ASTNODE *def_args, char *type_name, ASTNO
 ASTNODE *make_ast_def_method(char *reciever_name, char *method_name, ASTNODE *def_args, char *type_name, ASTNODE *body);
 ASTNODE *make_ast_call_method(char *reviever_name, char *method_name, ASTNODE *set_args);
 
-ASTNODE *make_ast_def_class(char *name, ASTNODE *def_vars,ASTNODE *def_funcs);
+ASTNODE *make_ast_def_class(char *name, char *super_name, ASTNODE *def_vars);
 
 ASTNODE *make_ast_call_func(char *name, ASTNODE *set_args);
 ASTNODE *make_ast_if(ASTNODE *cond, ASTNODE *then_stmt, ASTNODE *else_stmt);
 ASTNODE *make_ast_while(ASTNODE *cond, ASTNODE *loop_stmt);
+
+ASTNODE *search_ast_by_sym(ASTNODE *ap, char *sym_name);
 
 void print_astnode(int depth, ASTNODE *np);
 void print_astnodeln(int depth, ASTNODE *np);
