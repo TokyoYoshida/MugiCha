@@ -45,7 +45,81 @@
 
 #include "llvm_builder.h"
 
+std::shared_ptr<MugichaScopeInfo> global_scope = std::make_shared<MugichaScopeInfo>();
 ASTNODE *global_ast_rootp;
+
+MugichaKlassDef::MugichaKlassDef(std::string name){
+  name_ = name;
+}
+
+void MugichaKlassDef::addMethod(std::string name, std::shared_ptr<LLVMFuncBuilder> func){
+  method_map[name] = func;
+}
+
+int MugichaKlassDef::getMethodId(std::string name){
+  auto iter = method_map.find(name);
+  return std::distance(method_map.begin(), iter);
+}
+
+int MugichaKlassDef::getMethodCount(){
+  return method_map.size();
+}
+
+std::map<std::string, std::shared_ptr<LLVMFuncBuilder>> MugichaKlassDef::getMethodMap(){
+  return method_map;
+}
+
+void MugichaKlassDefMap::set(std::string name, MugichaKlassDef *klass_def){
+  TMP_DEBUGS(name.c_str());
+  TMP_DEBUGP(&map);
+    map[name] = klass_def;
+}
+
+int MugichaKlassDefMap::size(){
+  return map.size();
+}
+
+MugichaKlassDef *MugichaKlassDefMap::get(std::string name){
+TMP_DEBUGL;
+TMP_DEBUGS(name.c_str());
+TMP_DEBUGP(&map);
+  auto def = map[name];
+
+  if(!def) ASSERT_FAIL_BLOCK();
+
+  return def;
+}
+
+void MugichaKlassDefMap::makeKlassDef(std::string name){
+  TMP_DEBUGS(name.c_str());
+  TMP_DEBUGP(&map);
+  map[name] = new MugichaKlassDef(name);
+  TMP_DEBUGP(&map);
+}
+
+int MugichaKlassDefMap::getDefId(std::string name){
+  auto iter = map.find(name);
+  return std::distance(map.begin(), iter);
+}
+
+std::map<std::string, MugichaKlassDef *> MugichaKlassDefMap::getMap(){
+  return map;
+}
+
+void makeMugichaVariable(std::shared_ptr<MugichaScopeInfo> scope, std::string name ,TYPE type){
+  auto varMap = scope->getVarMap();
+  auto expr = scope->makeExprBuilder();
+
+  if(type.kind == KLASS) {
+    auto structDef = global_scope->getStructDefMap()->get(type.klass->name);
+    varMap->makeStruct(name, structDef);
+    auto target = new StructIndicator(name, KLASS_ID_VAL_NAME);
+    auto klassId = global_scope->getKlassDefMap()->getDefId(type.klass->name);
+    varMap->set(target, expr->makeConst(klassId));
+  } else {
+    varMap->makeVariable(name, type);
+  }
+}
 
 llvm::Type *getLLVMTypeByMugichaType(TYPE type, std::shared_ptr<MugichaScopeInfo> scope) {
   switch(type.kind){
@@ -59,10 +133,7 @@ llvm::Type *getLLVMTypeByMugichaType(TYPE type, std::shared_ptr<MugichaScopeInfo
     case STRING:
       return llvm::Type::getInt8PtrTy(*scope->getContext());
     case KLASS:
-      TMP_DEBUGS(type.klass->name);
-      auto structDef = scope->getStructDefMap()->get(type.klass->name);
-      TMP_DEBUGS(structDef->getDefName().c_str());
-      return structDef->getStructPtr();
+      return getOpequePtrType(scope->getContext());
   }
 }
 
@@ -71,6 +142,7 @@ MugichaScopeInfo::MugichaScopeInfo() {
   module_ = std::make_shared<LLVMModuleBuilder>("mugicha", context_);
   struct_def_map_ = std::make_shared<LLVMStructDefMap>(module_);
   var_map_ = std::make_shared<LLVMLocalVariableMap>(module_, struct_def_map_);
+  klass_def_map_ = std::make_shared<MugichaKlassDefMap>();
 }
 
 MugichaScopeInfo::MugichaScopeInfo(std::shared_ptr<MugichaScopeInfo> old_scope) {
@@ -78,6 +150,7 @@ MugichaScopeInfo::MugichaScopeInfo(std::shared_ptr<MugichaScopeInfo> old_scope) 
   module_ = old_scope->module_;
   var_map_ = old_scope->var_map_;
   struct_def_map_ = old_scope->struct_def_map_;
+  klass_def_map_ = old_scope->klass_def_map_;
 }
 
 std::shared_ptr<LLVMModuleBuilder> MugichaScopeInfo::getModuleBuilder(){
@@ -130,24 +203,105 @@ std::shared_ptr<LLVMStructDefMap> MugichaScopeInfo::getStructDefMap()
   return struct_def_map_;
 }
 
+std::shared_ptr<MugichaKlassDefMap> MugichaScopeInfo::getKlassDefMap(){
+  return klass_def_map_;
+}
+
+int MugichaScopeInfo::getKlassMax(){
+  return klass_def_map_->size();
+}
+
+int MugichaScopeInfo::getMethodMax(){
+  int method_max = 0;
+
+  for (auto& itr:klass_def_map_->getMap()) {
+    int count = itr.second->getMethodCount();
+    if(count > method_max) method_max = count;
+  }
+
+  return method_max;
+}
+
+int MugichaScopeInfo::getMethodArrayIndex(int klass_id, int method_id){
+  return klass_id * 20 + method_id; // TODO : use method max instead of 20
+}
+
+llvm::Value *MugichaScopeInfo::getMethodFromArray(int klass_id, int method_id){
+TMP_DEBUGL;
+  auto atype = getFuncArrayType();
+  TMP_DEBUGL;
+  auto iBuilder = getBuilder();
+  TMP_DEBUGL;
+
+  auto index = getMethodArrayIndex(klass_id, method_id);
+  TMP_DEBUGL;
+  TMP_DEBUGP(atype);
+  TMP_DEBUGP(func_ptr_arr_);
+  TMP_DEBUGI(index);
+  auto gep = iBuilder->CreateStructGEP(atype, func_ptr_arr_, index);
+  TMP_DEBUGL;
+  auto loadedFunc = iBuilder->CreateLoad(gep);
+
+  return loadedFunc;
+}
+
+llvm::PointerType *MugichaScopeInfo::getOpequePtrType(){
+  auto opequeType = llvm::Type::getInt8Ty(*context_);
+  auto opequePtrType = llvm::PointerType::getUnqual(opequeType);
+
+  return opequePtrType;
+}
+
+llvm::ArrayType *MugichaScopeInfo::getFuncArrayType(){
+  auto opequePtrType = getOpequePtrType();
+  auto atype = llvm::ArrayType::get(opequePtrType, 20*20);// TODO : use klass nad method max instead of 20
+
+  return atype;
+}
+
+void MugichaScopeInfo::makeFuncPtrArry(){
+  auto atype = getFuncArrayType();
+
+  func_ptr_arr_ = new llvm::GlobalVariable(/*Module=*/*module_->getModule(),
+  /*Type=*/atype,
+  /*isConstant=*/false,
+  /*Linkage=*/llvm::GlobalValue::InternalLinkage,
+  /*Initializer=*/llvm::ConstantAggregateZero::get(atype));
+
+  TMP_DEBUGP(func_ptr_arr_);
+}
+
+void MugichaScopeInfo::setFuncPtrArry(){
+  auto atype = getFuncArrayType();
+
+  for (auto& kitr:klass_def_map_->getMap()) {
+    for (auto& mitr:kitr.second->getMethodMap()) {
+      auto klass = kitr.second;
+      auto method = mitr.second;
+
+      int klass_id = klass_def_map_->getDefId(kitr.first);
+      int method_id = klass->getMethodId(mitr.first);
+
+      auto iBuilder = getBuilder();
+      auto gep = iBuilder->CreateStructGEP(atype, func_ptr_arr_, getMethodArrayIndex(klass_id, method_id));
+
+      auto opequePtrType = getOpequePtrType();
+      auto castedMyFunc = iBuilder->CreateBitCast(method->getFunc(), opequePtrType);
+      auto store = iBuilder->CreateStore(castedMyFunc, gep);
+    }
+  }
+}
+
+llvm::GlobalVariable *MugichaScopeInfo::getFuncPtrArry()
+{
+  return func_ptr_arr_;
+}
+
 llvm::Value *exec_def_var_codegen(ASTNODE *ap , std::shared_ptr<MugichaScopeInfo> scope)
 {
   auto expr = scope->makeExprBuilder();
 
-TMP_DEBUGL;
-  if(ap->type.kind == KLASS){
-    TMP_DEBUGL;
-    auto strutDef = scope->getStructDefMap()->get(ap->type.klass->name);
-    TMP_DEBUGS(ap->type.klass->name);
-    TMP_DEBUGP(strutDef);
-    TMP_DEBUGL;
-    scope->getVarMap()->makeStruct(ap->sym->name ,strutDef);
-    TMP_DEBUGL;
-  } else {
-    TMP_DEBUGL;
-    scope->getVarMap()->makeVariable(ap->sym->name ,ap->type);
-    TMP_DEBUGL;
-  }
+  makeMugichaVariable(scope, ap->sym->name ,ap->type);
 
   TMP_DEBUGL;
   return expr->makeConst(-1); // TODO
@@ -263,6 +417,16 @@ llvm::Value *exec_print_codegen(ASTNODE *ap, std::shared_ptr<MugichaScopeInfo> s
 
   values.push_back(formatStr);
 
+// test code start
+  // auto iBuilder = scope->getBuilder();
+  // auto arr = global_scope->getFuncPtrArry();
+  // auto intTy  = llvm::Type::getInt32Ty(*scope->getContext());
+  // auto atype = llvm::ArrayType::get(intTy, 100);
+  // auto gep = iBuilder->CreateStructGEP(atype, arr, 99);
+  // auto loadv = iBuilder->CreateLoad(gep);
+  // values.push_back(loadv);
+
+// test code end
 
   values.push_back(targetValue);
 
@@ -309,17 +473,27 @@ llvm::Value *exec_def_func_codegen(ASTNODE *ap, std::shared_ptr<MugichaScopeInfo
     llvm::Value *argVal = static_cast<llvm::Value*>( &*iter);
 
     auto argName =defArgs->sym->name;
-    varMap->makeVariable(argName, defArgs->type);
+    makeMugichaVariable(new_scope, argName, defArgs->type);
     auto target = new VariableIndicator(argName); // TODO this memory needs free after process
     varMap->set(target, argVal);
     TMP_DEBUGL;
   }
+
+  auto iBuilder = new_scope->getBuilder();
 
   TMP_DEBUGL;
   auto ret = eval_node_codegen(f->body, new_scope);
   TMP_DEBUGL;
 
   func->makeReturn(ret);
+
+  // make function array after all program is over.
+  if(!strcmp(ap->sym->name, "main")){
+    auto block = func->getBasicBlock();
+    auto itr = block->getFirstInsertionPt();
+    iBuilder->SetInsertPoint( block,itr );
+    global_scope->setFuncPtrArry();
+  }
 
   return ret;
 }
@@ -332,6 +506,14 @@ llvm::Value *exec_def_method_codegen(ASTNODE *ap, std::shared_ptr<MugichaScopeIn
   auto module = new_scope->getModule();
 
   auto funcInfo = lookup_func(ap->sym);
+  TMP_DEBUGL;
+  auto kmap = global_scope->getKlassDefMap();
+  TMP_DEBUGL;
+  TMP_DEBUGP(&kmap);
+  TMP_DEBUGS(ap->reciever_type.klass->name);
+  auto kd = kmap->get(ap->reciever_type.klass->name);
+  TMP_DEBUGL;
+  TMP_DEBUGL;
 
   std::vector<llvm::Type *> argTypes; // TODO : now arg is provisional.
 
@@ -351,6 +533,7 @@ llvm::Value *exec_def_method_codegen(ASTNODE *ap, std::shared_ptr<MugichaScopeIn
     llvm::FunctionType::get(retType, argTypes, false);
 
   auto func = std::make_shared<LLVMFuncBuilder>(new_scope->getModuleBuilder(), func_type, funcInfo->sym->name);
+  kd->addMethod(ap->sym->name, func);
 
   auto f = lookup_func(ap->sym);
 
@@ -363,14 +546,16 @@ llvm::Value *exec_def_method_codegen(ASTNODE *ap, std::shared_ptr<MugichaScopeIn
     TMP_DEBUGL;
     auto iter = argList.begin();
     llvm::Value *recieverVal = static_cast<llvm::Value*>( &*iter);
-    varMap->makeVariable("this", ap->reciever_type);
+
+    auto strutDef = global_scope->getStructDefMap()->get(ap->reciever_type.klass->name);
+    varMap->makeStruct("this", strutDef);
     auto reciever = new VariableIndicator("this");
     varMap->set(reciever, recieverVal);
 
     llvm::Value *argVal = static_cast<llvm::Value*>( &*++iter);
 
     auto argName =defArgs->sym->name;
-    varMap->makeVariable(argName, defArgs->type);
+    makeMugichaVariable(new_scope, argName, defArgs->type);
     auto target = new VariableIndicator(argName); // TODO this memory needs free after process
     varMap->set(target, argVal);
     TMP_DEBUGL;
@@ -425,8 +610,8 @@ llvm::Value *exec_call_func_codegen(ASTNODE *ap, std::shared_ptr<MugichaScopeInf
   llvm::Constant *callFunc =
     module->getModule()->getOrInsertFunction(funcInfo->sym->name, funcType);
 
-    TMP_DEBUGL;
-  auto ret = module->getBuilder()->CreateCall(callFunc, argValues);
+  auto iBuilder = scope->getBuilder();
+  auto ret = iBuilder->CreateCall(callFunc, argValues);
 
   TMP_DEBUGL;
   return ret;
@@ -476,11 +661,32 @@ llvm::Value *exec_call_method_codegen(ASTNODE *ap, std::shared_ptr<MugichaScopeI
   auto retType = getLLVMTypeByMugichaType(funcInfo->type, scope);
   llvm::FunctionType *funcType =
     llvm::FunctionType::get(retType, argTypes, true);
+
+
   llvm::Constant *callFunc =
     module->getModule()->getOrInsertFunction(funcInfo->sym->name, funcType);
 
     TMP_DEBUGL;
-  auto ret = module->getBuilder()->CreateCall(callFunc, argValues);
+  auto recieverVal = scope->getVarMap()->getVariable(ap->reciever->name);
+
+  TMP_DEBUGL;
+  auto iBuilder = scope->getBuilder();
+  TMP_DEBUGL;
+  auto kdef_map = global_scope->getKlassDefMap();
+  TMP_DEBUGL;
+  auto klass_def = kdef_map->get(recieverVal->getType().klass->name);
+  TMP_DEBUGL;
+  auto klass_id = kdef_map->getDefId(recieverVal->getType().klass->name);
+  TMP_DEBUGL;
+  auto method_id = klass_def->getMethodId(ap->sym->name);
+  TMP_DEBUGL;
+  auto loadedMethod = global_scope->getMethodFromArray(klass_id, method_id);
+  TMP_DEBUGL;
+
+  TMP_DEBUGL;
+  auto funcPtrType = llvm::PointerType::getUnqual(funcType);
+  auto restoredFunc = iBuilder->CreateBitCast(loadedMethod, funcPtrType);
+  auto ret = iBuilder->CreateCall(restoredFunc, argValues);
 
   TMP_DEBUGL;
   return ret;
@@ -558,13 +764,24 @@ TMP_DEBUGL;
   //   {"y" ,INT},
   // };
   auto fields = getFieldDef(module, ap);
+  if(getFieldDistance(fields, KLASS_ID_VAL_NAME) == -1){
+    TYPE ty;
+    ty.kind = INT;
+    LLVMStructDef::FieldDef id = {{
+      KLASS_ID_VAL_NAME,
+      ty
+    }};
+    fields.insert(fields.begin(), id.begin(), id.end());
+  }
   TMP_DEBUGL;
 
   if(fields.empty()){
     ASSERT_FAIL_BLOCK();
   }
 
-  scope->getStructDefMap()->makeStructDef(ap->sym->name, fields);
+  global_scope->getStructDefMap()->makeStructDef(ap->sym->name, fields);
+TMP_DEBUGS(ap->sym->name);
+  global_scope->getKlassDefMap()->makeKlassDef(ap->sym->name);
 
   TMP_DEBUGL;
   // auto structTy = llvm::StructType::create(fields, "Testx", false);
@@ -823,11 +1040,15 @@ llvm::Value *eval_node_codegen(ASTNODE *ap, std::shared_ptr<MugichaScopeInfo> sc
 void do_compile(ASTNODE *ast_rootp)
 {
   DEBUGL;
-  std::shared_ptr<MugichaScopeInfo> scope = std::make_shared<MugichaScopeInfo>();
+  std::shared_ptr<MugichaScopeInfo> scope = std::make_shared<MugichaScopeInfo>(global_scope);
 
   global_ast_rootp = ast_rootp;
   DEBUGL;
+  global_scope->makeFuncPtrArry();
+
   eval_node_codegen(ast_rootp, scope);
+
+
   //
   DEBUGL;
   WriteBitcodeToFile(scope->getModule(), llvm::outs());

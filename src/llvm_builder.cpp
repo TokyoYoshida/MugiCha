@@ -54,6 +54,13 @@
 #include "support.h"
 #include "symbol.h"
 
+llvm::PointerType *getOpequePtrType(llvm::LLVMContext *context){
+  auto opequeType = llvm::Type::getInt8Ty(*context);
+  auto opequePtrType = llvm::PointerType::getUnqual(opequeType);
+
+  return opequePtrType;
+}
+
 llvm::Type *astType2LLVMType(std::shared_ptr<LLVMModuleBuilder> module, TYPE type){
   switch(type.kind){
     case INT:
@@ -214,9 +221,7 @@ LLVMVariable::LLVMVariable(std::shared_ptr<LLVMModuleBuilder> module, std::strin
       value_ = module->getBuilder()->CreateAlloca(llvm::Type::getInt8PtrTy(*module->getContext()), 0, name);
       break;
     case KLASS:
-      TMP_DEBUGS(type.klass->name);
-      auto structDef = struct_def_map->get(type.klass->name);
-      value_ = module->getBuilder()->CreateAlloca(structDef->getStructPtr(), 0);
+      value_ = module->getBuilder()->CreateAlloca(getOpequePtrType(module->getContext()), 0);
       break;
   }
   TMP_DEBUGL;
@@ -265,12 +270,7 @@ std::string LLVMStructDef::getDefName(){
 }
 
 int LLVMStructDef::filedName2Index(std::string field_name){
-  for(auto itr = fields_.begin(); itr != fields_.end(); ++itr) {
-    if(itr->name == field_name){
-      return std::distance(fields_.begin(), itr);
-    }
-  }
-  ASSERT_FAIL_BLOCK();
+  return getFieldDistance(fields_, field_name);
 }
 
 LLVMStructDefMap::LLVMStructDefMap(std::shared_ptr<LLVMModuleBuilder> module){
@@ -304,7 +304,14 @@ TMP_DEBUGL;
   auto iBuilder = module_->getBuilder();
   alloca_inst= iBuilder->CreateAlloca(struct_def->getStructTy(), 0);
   TMP_DEBUGL;
-  iBuilder->CreateStore(alloca_inst, value_);
+
+  auto ptr = llvm::PointerType::getUnqual(struct_def->getStructPtr());
+  auto castedVal = iBuilder->CreateBitCast(value_, ptr);
+
+  TMP_DEBUGL;
+
+  iBuilder->CreateStore(alloca_inst, castedVal);
+  TMP_DEBUGL;
 }
 
 void LLVMStruct::set(std::string member_name, llvm::Value *newVal){
@@ -312,17 +319,25 @@ TMP_DEBUGL;
   auto iBuilder = module_->getBuilder();
 
   TMP_DEBUGL;
-  auto ptr = iBuilder->CreateLoad(value_);
+  auto ptrptr = llvm::PointerType::getUnqual(struct_def_->getStructPtr());
+  auto castedVal = iBuilder->CreateBitCast(value_, ptrptr);
+  TMP_DEBUGL;
+  auto ptr = iBuilder->CreateLoad(castedVal);
+  TMP_DEBUGL;
   auto field_i = struct_def_->filedName2Index(member_name);
 
+  TMP_DEBUGL;
   auto structTy = struct_def_->getStructTy();
-  llvm::Type   *intTy  = llvm::Type::getInt32Ty(*module_->getContext());
-  auto store = iBuilder->CreateStore(newVal, iBuilder->CreateStructGEP(structTy, ptr, field_i));
+  TMP_DEBUGL;
+  auto gep =  iBuilder->CreateStructGEP(structTy, ptr, field_i);
+  TMP_DEBUGL;
+  auto store = iBuilder->CreateStore(newVal, gep);
   TMP_DEBUGL;
 }
 
 void LLVMStruct::set(llvm::Value *newVal){
   TMP_DEBUGL;
+
   module_->getBuilder()->CreateStore(newVal, value_);
   TMP_DEBUGL;
   // value_ = (llvm::AllocaInst *)newVal;
@@ -333,7 +348,9 @@ TMP_DEBUGL;
   auto iBuilder = module_->getBuilder();
   auto structTy = struct_def_->getStructTy();
 
-  auto ptr = iBuilder->CreateLoad(value_);
+  auto ptrptr = llvm::PointerType::getUnqual(struct_def_->getStructPtr());
+  auto castedVal = iBuilder->CreateBitCast(value_, ptrptr);
+  auto ptr = iBuilder->CreateLoad(castedVal);
   auto field_i = struct_def_->filedName2Index(member_name);
 
   auto load = iBuilder->CreateLoad( iBuilder->CreateStructGEP(structTy, ptr, field_i));
@@ -372,12 +389,7 @@ LLVMLocalVariableMap::LLVMLocalVariableMap(std::shared_ptr<LLVMModuleBuilder> mo
 }
 
 void LLVMLocalVariableMap::makeVariable(std::string name ,TYPE type){
-  if(type.kind == KLASS) {
-    auto structDef = struct_def_map_->get(type.klass->name);
-    map[name] = new LLVMStruct(module_, structDef, name, struct_def_map_);
-  } else {
-    map[name] = new LLVMVariable(module_, name, type, struct_def_map_);
-  }
+  map[name] = new LLVMVariable(module_, name, type, struct_def_map_);
 }
 
 void LLVMLocalVariableMap::makeStruct(std::string name, LLVMStructDef *structDef){
@@ -393,6 +405,7 @@ VariableIndicator::VariableIndicator(std::string name){
 void VariableIndicator::set(LLVMVariableMap *target, llvm::Value *newVal){
     TMP_DEBUGL;
     auto var = target->getVariable(name_);
+    TMP_DEBUGL;
     var->set(newVal);
 }
 
@@ -427,4 +440,13 @@ llvm::Value *StructIndicator::get(LLVMVariableMap *target){
     TMP_DEBUGL;
     auto var = (LLVMStruct *)target->getVariable(name_);
     return var->get(member_name_);
+}
+
+int getFieldDistance(LLVMStructDef::FieldDef fields,std::string field_name){
+  for(auto itr = fields.begin(); itr != fields.end(); ++itr) {
+    if(itr->name == field_name){
+      return std::distance(fields.begin(), itr);
+    }
+  }
+  return -1;
 }
