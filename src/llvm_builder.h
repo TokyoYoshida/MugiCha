@@ -188,8 +188,12 @@ LLVMLocalVariableMap(std::shared_ptr<LLVMModuleBuilder> module, std::shared_ptr<
   void makeStruct(std::string name, LLVMStructDef *structDef);
 };
 
+llvm::PointerType *getOpequePtrType(llvm::LLVMContext *context);
+
 llvm::Value *makePrintf(std::shared_ptr<LLVMModuleBuilder> module,std::shared_ptr<LLVMExprBuilder> builder, std::string printStr); // TODO delete lator
 llvm::Type *astType2LLVMType(std::shared_ptr<LLVMModuleBuilder> module, TYPE type);
+
+int getFieldDistance(LLVMStructDef::FieldDef fields,std::string field_name);
 
 #endif /* __cplusplus */
 
