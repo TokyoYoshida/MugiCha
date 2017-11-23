@@ -307,6 +307,72 @@ llvm::Value *exec_def_var_codegen(ASTNODE *ap , std::shared_ptr<MugichaScopeInfo
   return expr->makeConst(-1); // TODO
 }
 
+std::vector<llvm::Value *> exec_expr_list_vectorgen(ASTNODE *ap, std::shared_ptr<MugichaScopeInfo> scope)
+{
+  std::vector<llvm::Value *> ret;
+
+TMP_DEBUGL;
+
+  if(ap->op != EXPR_LIST){
+    TMP_DEBUGL;
+    auto r = eval_node_codegen(ap, scope);
+    TMP_DEBUGL;
+    ret.push_back(r);
+    TMP_DEBUGL;
+    return ret;
+  }
+
+  TMP_DEBUGL;
+
+  TMP_DEBUGL;
+  auto lhs = eval_node_codegen(ap->left, scope);
+  ret.push_back(lhs);
+
+  TMP_DEBUGL;
+
+  if(ap->right->op == EXPR_LIST){
+    auto rhs = exec_expr_list_vectorgen(ap->right, scope);
+    if(!rhs.empty()) ret.insert(ret.end(), rhs.begin(), rhs.end());
+  } else {
+    auto rhs = eval_node_codegen(ap->right, scope);
+    ret.push_back(rhs);
+  }
+
+  TMP_DEBUGL;
+
+  return ret;
+}
+
+using ArgTuple = std::tuple<TYPE, std::string>;
+std::vector<ArgTuple> exec_args_vectorgen(ASTNODE *ap, std::shared_ptr<MugichaScopeInfo> scope)
+{
+  std::vector<ArgTuple> ret;
+
+  TMP_DEBUGL;
+  if(ap->op == DEF_VAR){
+    ArgTuple tp = {ap->type, std::string(ap->sym->name)};
+    ret.push_back(tp);
+    TMP_DEBUGS("push_arg");
+    TMP_DEBUGS(ap->sym->name);
+    TMP_DEBUGL;
+    return ret;
+  }
+
+  TMP_DEBUGL;
+  auto lhs = exec_args_vectorgen(ap->left, scope);
+  TMP_DEBUGL;
+  ret.insert(ret.end(), lhs.begin(), lhs.end());
+  TMP_DEBUGL;
+
+  TMP_DEBUGL;
+  auto rhs = exec_args_vectorgen(ap->right, scope);
+  TMP_DEBUGL;
+  ret.insert(ret.end(), rhs.begin(), rhs.end());
+  TMP_DEBUGL;
+
+  return ret;
+}
+
 llvm::Value *exec_set_var_codegen(ASTNODE *ap , std::shared_ptr<MugichaScopeInfo> scope)
 {
   auto expr = scope->makeExprBuilder();
@@ -328,7 +394,7 @@ DEBUGL;
   DEBUGL;
 
   auto target = new VariableIndicator(ap->sym->name);
-  DEBUGL;
+  TMP_DEBUGS(target);
   auto ret = scope->getVarMap()->get(target);
   DEBUGL;
 
@@ -443,15 +509,18 @@ llvm::Value *exec_def_func_codegen(ASTNODE *ap, std::shared_ptr<MugichaScopeInfo
 
   auto funcInfo = lookup_func(ap->sym);
 
-  std::vector<llvm::Type *> argTypes; // TODO : now arg is provisional.
+  std::vector<ArgTuple> argInfos;
+  std::vector<llvm::Type *> argTypes;
 
   auto defArgs = funcInfo->def_args;
   if( defArgs ){
     TMP_DEBUGI(defArgs->type.kind);
-    auto argType = getLLVMTypeByMugichaType(defArgs->type, new_scope);
+    argInfos = exec_args_vectorgen(defArgs, new_scope);
     TMP_DEBUGL;
-    argTypes.push_back(argType);
-    TMP_DEBUGL;
+    std::transform(argInfos.begin(), argInfos.end(), std::back_inserter(argTypes), [new_scope](const ArgTuple& e) {
+      TYPE t = std::get<0>(e);
+      return getLLVMTypeByMugichaType(t, new_scope);
+    });
   }
 
   auto retType = getLLVMTypeByMugichaType(funcInfo->type, new_scope);
@@ -470,12 +539,30 @@ llvm::Value *exec_def_func_codegen(ASTNODE *ap, std::shared_ptr<MugichaScopeInfo
   if( defArgs ){
     TMP_DEBUGL;
     auto iter = argList.begin();
-    llvm::Value *argVal = static_cast<llvm::Value*>( &*iter);
+    TMP_DEBUGL;
+    TMP_DEBUGL;
 
-    auto argName =defArgs->sym->name;
-    makeMugichaVariable(new_scope, argName, defArgs->type);
-    auto target = new VariableIndicator(argName); // TODO this memory needs free after process
-    varMap->set(target, argVal);
+    // auto argName =defArgs->sym->name;
+
+    TMP_DEBUGL;
+    for(auto argInfo : argInfos) {
+      TMP_DEBUGL;
+        llvm::Value *argVal = static_cast<llvm::Value*>( &*iter++);
+        TMP_DEBUGL;
+        auto argType = std::get<0>(argInfo);
+        auto argName = std::get<1>(argInfo);
+        TMP_DEBUGL;
+        TMP_DEBUGS("set arg");
+        TMP_DEBUGS(argName.c_str());
+        makeMugichaVariable(new_scope, argName, argType);
+        TMP_DEBUGL;
+        auto target = new VariableIndicator(argName); // TODO this memory needs free after process
+        TMP_DEBUGL;
+        varMap->set(target, argVal);
+        TMP_DEBUGL;
+     }
+    TMP_DEBUGL;
+    TMP_DEBUGL;
     TMP_DEBUGL;
   }
 
@@ -515,6 +602,7 @@ llvm::Value *exec_def_method_codegen(ASTNODE *ap, std::shared_ptr<MugichaScopeIn
   TMP_DEBUGL;
   TMP_DEBUGL;
 
+  std::vector<ArgTuple> argInfos;
   std::vector<llvm::Type *> argTypes; // TODO : now arg is provisional.
 
   auto defArgs = funcInfo->def_args;
@@ -524,8 +612,11 @@ llvm::Value *exec_def_method_codegen(ASTNODE *ap, std::shared_ptr<MugichaScopeIn
     TMP_DEBUGL;
     argTypes.push_back(recieverType);
     TMP_DEBUGL;
-    auto argType = getLLVMTypeByMugichaType(defArgs->type, new_scope);
-    argTypes.push_back(argType);
+    argInfos = exec_args_vectorgen(defArgs, new_scope);
+    std::transform(argInfos.begin(), argInfos.end(), std::back_inserter(argTypes), [new_scope](const ArgTuple& e) {
+      TYPE t = std::get<0>(e);
+      return getLLVMTypeByMugichaType(t, new_scope);
+    });
   }
 
   auto retType = getLLVMTypeByMugichaType(funcInfo->type, new_scope);
@@ -552,13 +643,22 @@ llvm::Value *exec_def_method_codegen(ASTNODE *ap, std::shared_ptr<MugichaScopeIn
     auto reciever = new VariableIndicator("this");
     varMap->set(reciever, recieverVal);
 
-    llvm::Value *argVal = static_cast<llvm::Value*>( &*++iter);
-
-    auto argName =defArgs->sym->name;
-    makeMugichaVariable(new_scope, argName, defArgs->type);
-    auto target = new VariableIndicator(argName); // TODO this memory needs free after process
-    varMap->set(target, argVal);
-    TMP_DEBUGL;
+    for(auto argInfo : argInfos) {
+      TMP_DEBUGL;
+        llvm::Value *argVal = static_cast<llvm::Value*>( &*++iter);
+        TMP_DEBUGL;
+        auto argType = std::get<0>(argInfo);
+        auto argName = std::get<1>(argInfo);
+        TMP_DEBUGL;
+        TMP_DEBUGS("set arg");
+        TMP_DEBUGS(argName.c_str());
+        makeMugichaVariable(new_scope, argName, argType);
+        TMP_DEBUGL;
+        auto target = new VariableIndicator(argName); // TODO this memory needs free after process
+        TMP_DEBUGL;
+        varMap->set(target, argVal);
+        TMP_DEBUGL;
+     }
   }
 
   TMP_DEBUGL;
@@ -581,25 +681,26 @@ llvm::Value *exec_call_func_codegen(ASTNODE *ap, std::shared_ptr<MugichaScopeInf
   // }
 
   std::vector<llvm::Value *> argValues;
-  std::vector<llvm::Type *> argTypes;
 
   auto context = module->getContext();
   auto funcInfo = lookup_func(ap->sym);
 
+  std::vector<ArgTuple> argInfos;
+  std::vector<llvm::Type *> argTypes;
+
   auto defArgs = funcInfo->def_args;
   if( defArgs ){
     TMP_DEBUGL;
-    auto argType = getLLVMTypeByMugichaType(defArgs->type,scope);
-    TMP_DEBUGL;
-    argTypes.push_back(argType);
-    TMP_DEBUGL;
+    argInfos = exec_args_vectorgen(defArgs, scope);
+    std::transform(argInfos.begin(), argInfos.end(), std::back_inserter(argTypes), [scope](const ArgTuple& e) {
+      TYPE t = std::get<0>(e);
+      return getLLVMTypeByMugichaType(t, scope);
+    });
   }
 
   if( ap->set_args ){ // TODO only single arg. multi arg requre.
     TMP_DEBUGL;
-    auto setValue = eval_node_codegen(ap->set_args->left, scope);
-    TMP_DEBUGL;
-    argValues.push_back(setValue);
+    argValues = exec_expr_list_vectorgen(ap->set_args, scope);
     TMP_DEBUGL;
   }
   TMP_DEBUGL;
@@ -632,6 +733,7 @@ llvm::Value *exec_call_method_codegen(ASTNODE *ap, std::shared_ptr<MugichaScopeI
 
   auto context = module->getContext();
   auto funcInfo = lookup_func(ap->sym);
+  std::vector<ArgTuple> argInfos;
 
   auto defArgs = funcInfo->def_args;
   if( defArgs ){
@@ -639,10 +741,11 @@ llvm::Value *exec_call_method_codegen(ASTNODE *ap, std::shared_ptr<MugichaScopeI
     auto recieverType = getLLVMTypeByMugichaType(recieverVal->getType(), scope);
     argTypes.push_back(recieverType);
     TMP_DEBUGL;
-    auto argType = getLLVMTypeByMugichaType(defArgs->type, scope);
-    TMP_DEBUGL;
-    argTypes.push_back(argType);
-    TMP_DEBUGL;
+    argInfos = exec_args_vectorgen(defArgs, scope);
+    std::transform(argInfos.begin(), argInfos.end(), std::back_inserter(argTypes), [scope](const ArgTuple& e) {
+      TYPE t = std::get<0>(e);
+      return getLLVMTypeByMugichaType(t, scope);
+    });
   }
 
   if( ap->set_args ){ // TODO only single arg. multi arg requre.
@@ -651,9 +754,9 @@ llvm::Value *exec_call_method_codegen(ASTNODE *ap, std::shared_ptr<MugichaScopeI
     auto recieverVal = scope->getVarMap()->get(target);
     argValues.push_back(recieverVal);
     TMP_DEBUGL;
-    auto setValue = eval_node_codegen(ap->set_args->left, scope);
+    auto args = exec_expr_list_vectorgen(ap->set_args, scope);
     TMP_DEBUGL;
-    argValues.push_back(setValue);
+    std::copy(args.begin(),args.end(),std::back_inserter(argValues));
     TMP_DEBUGL;
   }
   TMP_DEBUGL;
@@ -967,8 +1070,8 @@ llvm::Value *eval_node_op_codegen(ASTNODE *ap, std::shared_ptr<MugichaScopeInfo>
       return exec_calc_codegen(ap ,ap->op, scope);
     case SEQ:
       return exec_seq_codegen(ap, scope);
+    case EXPR_LIST:
     case NONE:
-    ASSERT_FAIL("this block expect never call.");
     case VALUEDATA:
     ASSERT_FAIL("this block expect never call.");
     case CMP_EQ:

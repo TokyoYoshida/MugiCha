@@ -19,14 +19,15 @@ int yydebug=1;
 }
 %token <np>      DOUBLE_LITERAL INT_LITERAL BOOL_LITERAL STRING_LITERAL
 %token <str>     NAME
-%token '+' '-' '*' '/' '\n' '(' ')' '.' ':' '=' EQUAL PRINT VAR FUNCTION CLASSDEF NOTEQUAL '!' '<' '>' '\"'
+%token '+' '-' '*' '/' '\n' '(' ')' '.' ':' '=' EQUAL PRINT VAR FUNCTION CLASSDEF NOTEQUAL '!' '<' '>' '\"' '[' ']' ','
 %token SMALLEREQUAL GREATEREQUAL IF ELSE WHILE
 %type <np> prog stmt expr expr_print def_var set_var set_member_var
 %type <np> def_class def_vars
 %type <np> def_func call_func def_method call_method primary_bool expr_cmp_eq expr_cmp_noteq
 %type <np> expr_cmp_greater expr_cmp_smaller expr_cmp_greaterequal expr_cmp_smallerequal
-%type <np> if_stmt expr_bool while_stmt primary_double expr_double primary_string
-%type <np> expr_string expr_int primary_int primary_get_variable primary_get_member_var
+%type <np> if_stmt expr_bool while_stmt primary_double primary_string
+%type <np> primary_int primary_get_variable primary_get_member_var
+%type <np> expr_list def_args
 %right '='
 %right '!'
 %left '+' '-'
@@ -93,6 +94,10 @@ def_func
     {
     $$ = make_ast_def_func($2, $4, $6, $8);
     }
+    | FUNCTION NAME '(' def_args ')' NAME '{' stmt '}'
+    {
+    $$ = make_ast_def_func($2, $4, $6, $8);
+    }
     | FUNCTION NAME '(' ')' NAME '{' stmt '}'
     {
     $$ = make_ast_def_func($2, NULL, $5, $7);
@@ -101,13 +106,23 @@ def_func
 def_method
     : FUNCTION NAME '.' NAME '(' def_var ')' NAME '{' stmt '}'
     {
-    TMP_DEBUGL;
-    $$ = make_ast_def_method($2, $4, $6, $8, $10);
+      TMP_DEBUGL;
+      $$ = make_ast_def_method($2, $4, $6, $8, $10);
+    }
+    | FUNCTION NAME '.' NAME '(' def_args ')' NAME '{' stmt '}'
+    {
+      $$ = make_ast_def_method($2, $4, $6, $8, $10);
     }
     | FUNCTION NAME '.' NAME '(' ')' NAME '{' stmt '}'
     {
-    TMP_DEBUGL;
-    $$ = make_ast_def_method($2, $4, NULL, $7, $9);
+      TMP_DEBUGL;
+      $$ = make_ast_def_method($2, $4, NULL, $7, $9);
+    }
+    ;
+def_args
+    : def_var ',' def_var
+    {
+      $$ = make_ast_op(DEF_ARGS, $1, $3);
     }
     ;
 def_var
@@ -141,11 +156,11 @@ while_stmt
     }
     ;
 expr
-    : expr_int
+    : primary_int
     | expr_print
     | expr_bool
-    | expr_double
-    | expr_string
+    | primary_double
+    | primary_string
     | call_func
     | call_method
     | primary_get_variable
@@ -168,7 +183,11 @@ expr
     }
     ;
 call_func
-    : NAME '(' set_var ')'
+    : NAME '(' expr_list ')'
+    {
+    $$ = make_ast_call_func($1, $3);
+    }
+    | NAME '(' expr ')'
     {
     $$ = make_ast_call_func($1, $3);
     }
@@ -178,13 +197,23 @@ call_func
     }
     ;
 call_method
-    : NAME '.' NAME '(' set_var ')'
+    : NAME '.' NAME '(' expr_list ')'
     {
     $$ = make_ast_call_method($1, $3, $5);
     }
-    | NAME '(' ')'
+    | NAME '.' NAME '(' expr ')'
+    {
+    $$ = make_ast_call_method($1, $3, $5);
+    }
+    | NAME '.' NAME '(' ')'
     {
     $$ = make_ast_call_method($1, NULL, NULL);
+    }
+    ;
+expr_list
+    : expr ',' expr
+    {
+      $$ = make_ast_op(EXPR_LIST, $1, $3);
     }
     ;
 expr_print
@@ -196,63 +225,6 @@ expr_print
     {
       $$ = make_ast_cmd(PRINTDATA, $3);
     }
-    ;
-expr_int
-    : expr_int '+' expr_int
-    {
-      $$ = make_ast_op(ADD, $1, $3);
-    }
-    | expr_int '-' expr_int
-    {
-      $$ = make_ast_op(SUB, $1, $3);
-    }
-    | expr_int '*' expr_int
-    {
-      $$ = make_ast_op(MUL, $1, $3);
-    }
-    | expr_int '/' expr_int
-    {
-      $$ = make_ast_op(DIV, $1, $3);
-    }
-    | primary_int
-    ;
-expr_double
-    : expr_double '+' expr_double
-    {
-      $$ = make_ast_op(ADD, $1, $3);
-    }
-    | expr_double '-' expr_double
-    {
-      $$ = make_ast_op(SUB, $1, $3);
-    }
-    | expr_double '*' expr_double
-    {
-      $$ = make_ast_op(MUL, $1, $3);
-    }
-    | expr_double '/' expr_double
-    {
-      $$ = make_ast_op(DIV, $1, $3);
-    }
-    | primary_double
-    ;
-expr_string
-    : expr_string '+' expr_string
-    {
-      $$ = make_ast_op(ADD, $1, $3);
-    }
-    | expr_string '+' expr_int
-    {
-      $$ = make_ast_op(ADD, $1, $3);
-    }
-    | expr_string '+' expr_double
-    {
-      $$ = make_ast_op(ADD, $1, $3);
-    }
-    | expr_string '+' expr_bool
-    {
-      $$ = make_ast_op(ADD, $1, $3);
-    }
-    | primary_string
     ;
 expr_bool
     : primary_bool

@@ -8,7 +8,7 @@ func test(var x int) int {
 
 func main() int {
   var x int
-  x = test(x = 0) + 1
+  x = test(0) + 1
   print(x)
   0
 }

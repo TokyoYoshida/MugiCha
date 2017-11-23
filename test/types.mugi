@@ -19,9 +19,9 @@ func boolfunc(var x bool) int {
 }
 
 func main() int {
-  intfunc(x = 2)
-  doublefunc(x = 100.1)
-  strfunc(x = "this is test")
-  boolfunc(x = true)
+  intfunc(2)
+  doublefunc(100.1)
+  strfunc("this is test")
+  boolfunc(true)
   0
 }

@@ -7,6 +7,6 @@ func myfunc(var x int) int {
 }
 
 func main() int {
-  myfunc(x = 100)
+  myfunc(100)
   0
 }
