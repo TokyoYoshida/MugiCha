@@ -21,7 +21,7 @@ func TestX.test(var a double) int {
 }
 
 func testfunc(var k SuperX) int {
-  k.test(100.0)
+  k.test(a = 100.0)
   0
 }
 
@@ -32,6 +32,6 @@ func main() int {
   y.y = 1000.1
   y.z = 20000.0
 
-  testfunc(y)
+  testfunc(k = y)
   0
 }

@@ -17,7 +17,7 @@ func main() int {
   y.x = 100
   y.y = 1000.1
   y.z = 20000.0
-  y.test(a = 1)
+  y.test(1)
   print(y.z)
   0
 }

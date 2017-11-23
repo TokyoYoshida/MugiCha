@@ -3,12 +3,12 @@ func factorial(var x int) int {
   if x == 1 {
     ret = 1
   } else {
-    ret = x * factorial(x = x - 1)
+    ret = x * factorial(x - 1)
   }
   ret
 }
 
 func main() int {
-  print(factorial(x = 5))
+  print(factorial(5))
   0
 }

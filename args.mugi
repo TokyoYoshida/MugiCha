@@ -1,0 +1,15 @@
+func test(var x int , var y int) int {
+  print(x)
+  print(y)
+  x
+}
+
+func main() int {
+  var x int
+  var y int
+  x = 1
+  y = 100
+  test(100, 1000 + y)
+  print(x)
+  0
+}

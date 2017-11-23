@@ -45,6 +45,7 @@ void print_op(ASTNODE *np){
 "."		return '.';
 ":"		return ':';
 "="		return '=';
+","		return ',';
 "=="	return EQUAL;
 "!="	return NOTEQUAL;
 ">"	return '>';
@@ -52,6 +53,8 @@ void print_op(ASTNODE *np){
 ">="	return GREATEREQUAL;
 "<="	return SMALLEREQUAL;
 "!"	return '!';
+"["	return '[';
+"]"	return ']';
 "if" return IF;
 "else" return ELSE;
 "print" return PRINT;
