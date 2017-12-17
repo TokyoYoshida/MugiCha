@@ -6,7 +6,7 @@
 
 enum MugichaMode {Interpreter, Compiler, DisplayAst};
 
-// #define YACC_DEBUG 1
+#define YACC_DEBUG 1
 
 void interpreter_main(ASTNODE *rootp);
 void mugicha_main(ASTNODE *rootp);

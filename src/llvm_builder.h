@@ -140,6 +140,24 @@ private:
   virtual llvm::Value *get();
 };
 
+class LLVMArray : public LLVMVariable {
+private:
+  LLVMStructDef *struct_def_;
+  llvm::AllocaInst *alloca_inst;
+  llvm::AllocaInst *alloca_inst_ptr;
+
+  public:
+    LLVMArray(std::shared_ptr<LLVMModuleBuilder> module, std::string name, std::shared_ptr<LLVMStructDefMap> struct_def_map, TYPE type);
+
+    llvm::ArrayType *getArrayType();
+
+  virtual void set(llvm::Value *index, llvm::Value *newVal);
+
+  virtual llvm::Value *get(llvm::Value *index);
+
+  llvm::PointerType *getArrayPtr();
+};
+
 class LLVMVariableMap;
 
 class VariableIndicator {
@@ -158,6 +176,16 @@ class StructIndicator : public VariableIndicator {
 
   public:
     StructIndicator(std::string var_name, std::string member_name);
+
+    virtual void set(LLVMVariableMap *target, llvm::Value *newVal); // visitor of Visitor Pattern
+    virtual llvm::Value *get(LLVMVariableMap *target); // visitor of Visitor Pattern
+};
+
+class ArrayIndicator : public VariableIndicator {
+  llvm::Value *index_;
+
+  public:
+    ArrayIndicator(std::string var_name, llvm::Value *index);
 
     virtual void set(LLVMVariableMap *target, llvm::Value *newVal); // visitor of Visitor Pattern
     virtual llvm::Value *get(LLVMVariableMap *target); // visitor of Visitor Pattern
@@ -186,12 +214,13 @@ LLVMLocalVariableMap(std::shared_ptr<LLVMModuleBuilder> module, std::shared_ptr<
 
   virtual void makeVariable(std::string name ,TYPE type);
   void makeStruct(std::string name, LLVMStructDef *structDef);
+  void makeArray(std::string name, TYPE type);
 };
 
 llvm::PointerType *getOpequePtrType(llvm::LLVMContext *context);
 
 llvm::Value *makePrintf(std::shared_ptr<LLVMModuleBuilder> module,std::shared_ptr<LLVMExprBuilder> builder, std::string printStr); // TODO delete lator
-llvm::Type *astType2LLVMType(std::shared_ptr<LLVMModuleBuilder> module, TYPE type);
+llvm::Type *astType2LLVMType(std::shared_ptr<LLVMModuleBuilder> module, TYPEKIND kind);
 
 int getFieldDistance(LLVMStructDef::FieldDef fields,std::string field_name);
 

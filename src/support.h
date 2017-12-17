@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-// #define MUGICHA_DEBUG 1
+#define MUGICHA_DEBUG 1
 
 #ifdef MUGICHA_DEBUG
 

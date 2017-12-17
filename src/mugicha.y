@@ -27,7 +27,7 @@ int yydebug=1;
 %type <np> expr_cmp_greater expr_cmp_smaller expr_cmp_greaterequal expr_cmp_smallerequal
 %type <np> if_stmt expr_bool while_stmt primary_double primary_string
 %type <np> primary_int primary_get_variable primary_get_member_var
-%type <np> expr_list def_args
+%type <np> expr_list def_args expr_int primary_get_array_var set_array_var
 %right '='
 %right '!'
 %left '+' '-'
@@ -54,6 +54,7 @@ stmt
     | def_var
     | set_var
     | set_member_var
+    | set_array_var
     | def_func
     | def_method
     | def_class
@@ -130,6 +131,10 @@ def_var
     {
     $$ = make_ast_def_var($2, $3);
     }
+    | VAR NAME '[' NAME ']'
+    {
+    $$ = make_ast_def_array($2, $4);
+    }
     ;
 set_var
     : NAME '=' expr
@@ -141,6 +146,12 @@ set_member_var
     : NAME '.' NAME '=' expr
     {
     $$ = make_ast_set_member_var($1, $3, $5);
+    }
+    ;
+set_array_var
+    : NAME '[' expr_int ']' '=' expr
+    {
+    $$ = make_ast_set_array_var($1, $3, $6);
     }
     ;
 if_stmt
@@ -165,6 +176,8 @@ expr
     | call_method
     | primary_get_variable
     | primary_get_member_var
+    | primary_get_array_var
+    | expr_int
     | expr '+' expr
     {
       $$ = make_ast_op(ADD, $1, $3);
@@ -224,6 +237,25 @@ expr_print
     | PRINT '(' expr ')'
     {
       $$ = make_ast_cmd(PRINTDATA, $3);
+    }
+    ;
+expr_int
+    : primary_int
+    | expr_int '+' expr_int
+    {
+      $$ = make_ast_op(ADD, $1, $3);
+    }
+    | expr_int '-' expr_int
+    {
+      $$ = make_ast_op(SUB, $1, $3);
+    }
+    | expr_int '*' expr_int
+    {
+      $$ = make_ast_op(MUL, $1, $3);
+    }
+    | expr_int '/' expr_int
+    {
+      $$ = make_ast_op(DIV, $1, $3);
     }
     ;
 expr_bool
@@ -293,6 +325,12 @@ primary_get_member_var
     : NAME '.' NAME
     {
       $$ = make_ast_get_member_var($1, $3);
+    }
+    ;
+primary_get_array_var
+    : NAME '[' expr_int ']'
+    {
+      $$ = make_ast_get_array_var($1, $3);
     }
     ;
 %%

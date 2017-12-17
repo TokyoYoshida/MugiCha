@@ -25,15 +25,14 @@ char *value_description(VALUE val)
       return "ANY";
   }
 
-
   return ret;
 }
 
 char *get_type_description(TYPEKIND i)
 {
-  static char *type_a[] = {"ANY", "INT", "DOUBLE","BOOLTYPE","STRING","KLASS"};
+  static char *type_a[] = {"ANY", "INT", "DOUBLE","BOOLTYPE","STRING","ARRAY", "KLASS"};
 
-  if(i > STRING ) ASSERT_FAIL("out of bounds");
+  if(i > KLASS ) ASSERT_FAIL("out of bounds");
 
   return type_a[i];
 }
@@ -41,7 +40,7 @@ char *get_type_description(TYPEKIND i)
 char *get_op_description(OPERATION i)
 {
   static char *op_a[]   = {"NONE", "VALUEDATA", "ADD", "SUB", "MUL", "DIV", "SEQ",
-    "EXPR_LIST", "DEF_ARGS", "PRINTDATA", "DEF_VAR", "SET_VAR", "GET_VAR", "DEF_FUNC", "DEF_METHOD", "CALL_FUNC", "CALL_METHOD","CMP_EQ", "CMP_NOTEQ", "CMP_GREATER", "CMP_SMALLE", "CMP_GREATEREQ", "CMP_SMALLEEQ", "IF_STMT","WHILE_STMT","SET_MEMBER_VAR", "GET_MEMBER_VAR", "DEF_CLASS"}; // if modify this place, you also must modify type `_OPERATION`.
+    "EXPR_LIST", "DEF_ARGS", "PRINTDATA", "DEF_VAR", "SET_VAR", "GET_VAR", "DEF_FUNC", "DEF_METHOD", "CALL_FUNC", "CALL_METHOD","CMP_EQ", "CMP_NOTEQ", "CMP_GREATER", "CMP_SMALLE", "CMP_GREATEREQ", "CMP_SMALLEEQ", "IF_STMT","WHILE_STMT", "SET_MEMBER_VAR", "SET_ARRAY_VAR", "GET_MEMBER_VAR", "GET_ARRAY_VAR", "DEF_CLASS"}; // if modify this place, you also must modify type `_OPERATION`.
 
   if(i > DEF_CLASS) ASSERT_FAIL("out of bounds");
 
