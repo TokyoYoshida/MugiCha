@@ -110,14 +110,23 @@ void makeMugichaVariable(std::shared_ptr<MugichaScopeInfo> scope, std::string na
   auto varMap = scope->getVarMap();
   auto expr = scope->makeExprBuilder();
 
-  if(type.kind == KLASS) {
-    auto structDef = global_scope->getStructDefMap()->get(type.klass->name);
-    varMap->makeStruct(name, structDef);
-    auto target = new StructIndicator(name, KLASS_ID_VAL_NAME);
-    auto klassId = global_scope->getKlassDefMap()->getDefId(type.klass->name);
-    varMap->set(target, expr->makeConst(klassId));
-  } else {
-    varMap->makeVariable(name, type);
+  switch(type.kind){
+    case KLASS: {
+      auto structDef = global_scope->getStructDefMap()->get(type.klass->name);
+      varMap->makeStruct(name, structDef);
+      auto target = new StructIndicator(name, KLASS_ID_VAL_NAME);
+      auto klassId = global_scope->getKlassDefMap()->getDefId(type.klass->name);
+      varMap->set(target, expr->makeConst(klassId));
+      break;
+    }
+    case ARRAY: {
+      varMap->makeArray(name, type);
+      break;
+    }
+    default: {
+      varMap->makeVariable(name, type);
+      break;
+    }
   }
 }
 
@@ -409,7 +418,6 @@ llvm::Value *exec_calc_codegen(ASTNODE *ap,OPERATION calc_mode , std::shared_ptr
   // VALUE lhs ,rhs;
   // char *s;
   // char *rhs_str;
-
 
   auto lhs = eval_node_codegen(ap->left  ,scope);
   auto rhs = eval_node_codegen(ap->right ,scope);
@@ -841,8 +849,6 @@ LLVMStructDef::FieldDef getFieldDef(llvm::Module *module, ASTNODE *ap)
 
 llvm::Value *exec_def_class_codegen(ASTNODE *ap, std::shared_ptr<MugichaScopeInfo> scope)
 {
-  // TODO make this function
-  // auto vals = eval_def_vars(ap->def_vars);
 TMP_DEBUGL;
   auto context = scope->getContext();
   TMP_DEBUGL;
@@ -925,11 +931,50 @@ llvm::Value *exec_get_member_var_codegen(ASTNODE *ap , std::shared_ptr<MugichaSc
   return ret;
 }
 
+llvm::Value *exec_set_array_var_codegen(ASTNODE *ap , std::shared_ptr<MugichaScopeInfo> scope)
+{
+TMP_DEBUGL;
+  auto expr = scope->makeExprBuilder();
+
+  TMP_DEBUGL;
+  auto ret = eval_node_codegen(ap->left, scope);
+
+  TMP_DEBUGL;
+  auto index = eval_node_codegen(ap->right, scope);
+  auto target = (VariableIndicator *)new ArrayIndicator(ap->sym->name, index);
+  TMP_DEBUGL;
+  scope->getVarMap()->set(target, ret);
+
+  TMP_DEBUGL;
+  return ret;
+}
+
+llvm::Value *exec_get_array_var_codegen(ASTNODE *ap , std::shared_ptr<MugichaScopeInfo> scope)
+{
+  TMP_DEBUGL;
+  auto expr = scope->makeExprBuilder();
+
+  if(!ap->sym) ASSERT_FAIL_BLOCK();
+
+  TMP_DEBUGL;
+  TMP_DEBUGP(ap->sym);
+  TMP_DEBUGS(ap->sym->name);
+  auto index = eval_node_codegen(ap->left, scope);
+  auto target = (VariableIndicator *)new ArrayIndicator(ap->sym->name, index);
+  TMP_DEBUGL;
+  auto ret = scope->getVarMap()->get(target);
+  TMP_DEBUGL;
+
+  return ret;
+}
 
 llvm::Value *exec_seq_codegen(ASTNODE *ap, std::shared_ptr<MugichaScopeInfo> scope)
 {
+  TMP_DEBUGL;
   auto lhs = eval_node_codegen(ap->left, scope);
+  TMP_DEBUGL;
   auto rhs = eval_node_codegen(ap->right, scope);
+  TMP_DEBUGL;
 
   return rhs;
 }
@@ -1103,6 +1148,10 @@ llvm::Value *eval_node_op_codegen(ASTNODE *ap, std::shared_ptr<MugichaScopeInfo>
     return exec_set_member_var_codegen(ap, scope);
     case GET_MEMBER_VAR:
     return exec_get_member_var_codegen(ap, scope);
+    case SET_ARRAY_VAR:
+    return exec_set_array_var_codegen(ap, scope);
+    case GET_ARRAY_VAR:
+    return exec_get_array_var_codegen(ap, scope);
     case IF_STMT:
     return exec_if_codegen(ap, scope);
     case WHILE_STMT:

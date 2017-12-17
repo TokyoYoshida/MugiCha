@@ -272,6 +272,25 @@ ASTNODE *make_ast_def_var(char *name, char *type_name)
     return np;
 }
 
+ASTNODE *make_ast_def_array(char *name, char *type_name)
+{
+  ASTNODE *np;
+
+  TMP_DEBUGL;
+
+  np = make_astnode();
+
+  np->type.kind =  ARRAY;
+  np->type.elem_kind =  get_type_by_name(type_name);
+  if(np->type.elem_kind == KLASS) np->type.klass = lookup_make_symbol(type_name);
+  np->op         = DEF_VAR;
+  np->sym        = lookup_make_symbol(name);
+  np->left       = NULL;
+  np->right      = NULL;
+
+  return np;
+}
+
 ASTNODE *make_ast_set_var(char *name, ASTNODE *newval)
 {
     ASTNODE *np;
@@ -320,6 +339,30 @@ TMP_DEBUGL;
     return np;
 }
 
+ASTNODE *make_ast_set_array_var(char *var_name, ASTNODE *index_node, ASTNODE *newval)
+{
+    ASTNODE *np;
+    SYMBOL *s, *mems;
+
+TMP_DEBUGL;
+
+    s = lookup_symbol(var_name);
+
+    np = make_astnode();
+
+    np->type.kind =  ANY;
+    np->op         = SET_ARRAY_VAR;
+    np->sym        = s;
+    np->left       = newval;
+    np->right      = index_node;
+
+    // printf("symbol = %s",symbol_description(np->sym));
+
+    // print_astnodeln(0, np);
+
+    return np;
+}
+
 ASTNODE *make_ast_get_member_var(char *var_name, char *member_name)
 {
     ASTNODE *np;
@@ -339,6 +382,32 @@ TMP_DEBUGS(var_name);
     np->sym        = s;
     np->member     = mems;
     np->left       = NULL;
+    np->right      = NULL;
+
+    // printf("symbol = %s",symbol_description(np->sym));
+
+    // print_astnodeln(0, np);
+
+    return np;
+}
+
+ASTNODE *make_ast_get_array_var(char *var_name, ASTNODE *index_node)
+{
+    ASTNODE *np;
+    SYMBOL *s, *mems;
+
+TMP_DEBUGL;
+
+    s = lookup_make_symbol(var_name);
+
+TMP_DEBUGS(var_name);
+
+    np = make_astnode();
+
+    np->type.kind =  ANY;
+    np->op         = GET_ARRAY_VAR;
+    np->sym        = s;
+    np->left       = index_node;
     np->right      = NULL;
 
     // printf("symbol = %s",symbol_description(np->sym));
@@ -381,10 +450,18 @@ void print_astnode(int depth, ASTNODE *np)
     printf(" ");
   }
 
+  TMP_DEBUGL;
+  TMP_DEBUGP(np);
+  TMP_DEBUGI(np->op);
+  TMP_DEBUGI(np->type.kind);
   t = get_type_description(np->type.kind);
+  TMP_DEBUGL;
   o = get_op_description(np->op);
+  TMP_DEBUGL;
   v = value_description(np->val);
+  TMP_DEBUGL;
   printf("ast type.kind =  %s oper = %s val = %s ",t ,o, v);
+  TMP_DEBUGL;
 
 
 
@@ -393,7 +470,17 @@ void print_astnode(int depth, ASTNODE *np)
   }
   if(np->op == DEF_FUNC){
     printf("/ func symbol : %s / ",symbol_description(np->sym));
+    TMP_DEBUGL;
+    FUNC *f = lookup_func(np->sym);
+    TMP_DEBUGL;
+    if(f->body){
+      TMP_DEBUGP(f->body);
+      printf("\n");
+      print_ast(depth + 1, f->body);
+    }
+    TMP_DEBUGL;
   }
+  TMP_DEBUGL;
 
 /*
   printf("addr:%p type.kind =  %s oper = %s val = %s left = %p right = %p\n",
@@ -415,10 +502,14 @@ void print_astnodeln(int depth, ASTNODE *np)
 
 void print_ast(int depth, ASTNODE *np)
 {
+  TMP_DEBUGL;
+  TMP_DEBUGP(np);
   print_astnodeln(depth, np);
+  TMP_DEBUGL;
 
   if(np->left)
     print_ast(depth + 1, np->left);
   if(np->right)
     print_ast(depth + 1, np->right);
+  TMP_DEBUGL;
 }

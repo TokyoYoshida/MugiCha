@@ -61,8 +61,8 @@ llvm::PointerType *getOpequePtrType(llvm::LLVMContext *context){
   return opequePtrType;
 }
 
-llvm::Type *astType2LLVMType(std::shared_ptr<LLVMModuleBuilder> module, TYPE type){
-  switch(type.kind){
+llvm::Type *astType2LLVMType(std::shared_ptr<LLVMModuleBuilder> module, TYPEKIND kind){
+  switch(kind){
     case INT:
     case BOOLTYPE:
       return llvm::Type::getInt32Ty(*module->getContext());
@@ -200,7 +200,6 @@ llvm::Instruction *LLVMExprBuilder::makeCalcOp(llvm::AddrSpaceCastInst::BinaryOp
 
   block->getInstList().push_back(inst); //この操作を挟まないとうまく行かず
 
-
   return inst;
 }
 
@@ -209,6 +208,8 @@ LLVMVariable::LLVMVariable(std::shared_ptr<LLVMModuleBuilder> module, std::strin
   module_ = module;
 
   TMP_DEBUGI(type.kind);
+  DEBUGS(name.c_str());
+  DEBUGS(get_type_description(type.kind));
   switch(type.kind){
     case INT:
     case BOOLTYPE:
@@ -220,9 +221,12 @@ LLVMVariable::LLVMVariable(std::shared_ptr<LLVMModuleBuilder> module, std::strin
     case STRING:
       value_ = module->getBuilder()->CreateAlloca(llvm::Type::getInt8PtrTy(*module->getContext()), 0, name);
       break;
+    case ARRAY:
     case KLASS:
       value_ = module->getBuilder()->CreateAlloca(getOpequePtrType(module->getContext()), 0);
       break;
+    default:
+      ASSERT_FAIL_BLOCK();
   }
   TMP_DEBUGL;
 }
@@ -249,7 +253,7 @@ LLVMStructDef::LLVMStructDef(std::shared_ptr<LLVMModuleBuilder> module, std::str
 
   std::vector<llvm::Type*> fieldsvec;
   for(auto itr = fields.begin(); itr != fields.end(); ++itr) {
-    auto type =  astType2LLVMType(module_, itr->type);
+    auto type =  astType2LLVMType(module_, itr->type.kind);
     fieldsvec.push_back(type);
   }
 
@@ -363,6 +367,91 @@ llvm::Value *LLVMStruct::get(){
   // return value_;
 }
 
+llvm::ArrayType *LLVMArray::getArrayType(){
+  auto elem_type = astType2LLVMType(module_, type_.elem_kind);
+  auto atype = llvm::ArrayType::get(elem_type, 100);// TODO : this is draft code
+
+  return atype;
+}
+
+LLVMArray::LLVMArray(std::shared_ptr<LLVMModuleBuilder> module, std::string name, std::shared_ptr<LLVMStructDefMap> struct_def_map, TYPE type) : LLVMVariable(module, name, type, struct_def_map) {
+TMP_DEBUGL;
+  auto iBuilder = module_->getBuilder();
+  auto atype = getArrayType();
+
+  alloca_inst= iBuilder->CreateAlloca(atype, 0);
+  TMP_DEBUGL;
+  //
+  auto ptr = llvm::PointerType::getUnqual(getArrayPtr());
+
+  auto castedVal = iBuilder->CreateBitCast(value_, ptr);
+  //
+  TMP_DEBUGL;
+
+  iBuilder->CreateStore(alloca_inst, castedVal);
+  TMP_DEBUGL;
+}
+
+void LLVMArray::set(llvm::Value *index, llvm::Value *newVal){
+TMP_DEBUGL;
+  auto iBuilder = module_->getBuilder();
+
+  TMP_DEBUGL;
+  auto ptrptr = llvm::PointerType::getUnqual(getArrayPtr());
+  auto castedVal = iBuilder->CreateBitCast(value_, ptrptr);
+  TMP_DEBUGL;
+  auto ptr = iBuilder->CreateLoad(castedVal);
+  TMP_DEBUGL;
+  llvm::ConstantInt* CI = llvm::dyn_cast<llvm::ConstantInt>(index);
+  if (!CI) {
+    ASSERT_FAIL_BLOCK();
+  }
+  auto field_i = CI->getSExtValue();
+  // auto field_i = index;
+
+  TMP_DEBUGL;
+  auto structTy = getArrayType();
+  TMP_DEBUGL;
+  auto gep =  iBuilder->CreateStructGEP(structTy, ptr, field_i);
+
+  auto store = iBuilder->CreateStore(newVal, gep);
+  TMP_DEBUGL;
+}
+
+llvm::Value *LLVMArray::get(llvm::Value *index){
+TMP_DEBUGL;
+  auto iBuilder = module_->getBuilder();
+  TMP_DEBUGL;
+  auto structTy = getArrayType();
+
+  TMP_DEBUGL;
+  auto ptrptr = llvm::PointerType::getUnqual(getArrayPtr());
+  TMP_DEBUGL;
+  auto castedVal = iBuilder->CreateBitCast(value_, ptrptr);
+  TMP_DEBUGL;
+  auto ptr = iBuilder->CreateLoad(castedVal);
+  TMP_DEBUGL;
+  llvm::ConstantInt* CI = llvm::dyn_cast<llvm::ConstantInt>(index);
+  if (!CI) {
+    ASSERT_FAIL_BLOCK();
+  }
+  auto field_i = CI->getSExtValue();
+  TMP_DEBUGI(field_i);
+
+  TMP_DEBUGL;
+  auto gep =  iBuilder->CreateStructGEP(structTy, ptr, field_i);
+  auto load = iBuilder->CreateLoad( gep);
+  TMP_DEBUGL;
+
+  return load;
+}
+
+llvm::PointerType *LLVMArray::getArrayPtr(){
+  auto atype = getArrayType();
+  auto ptr = llvm::PointerType::getUnqual(atype);
+  return ptr;
+}
+
 LLVMVariableMap::LLVMVariableMap(std::shared_ptr<LLVMModuleBuilder> module, std::shared_ptr<LLVMStructDefMap> struct_def_map){
   module_ = module;
   struct_def_map_ = struct_def_map;
@@ -395,6 +484,12 @@ void LLVMLocalVariableMap::makeVariable(std::string name ,TYPE type){
 void LLVMLocalVariableMap::makeStruct(std::string name, LLVMStructDef *structDef){
   TMP_DEBUGL;
   map[name] = new LLVMStruct(module_, structDef, name ,struct_def_map_);
+  TMP_DEBUGL;
+}
+
+void LLVMLocalVariableMap::makeArray(std::string name, TYPE type){
+  TMP_DEBUGL;
+  map[name] = new LLVMArray(module_, name ,struct_def_map_, type);
   TMP_DEBUGL;
 }
 
@@ -449,4 +544,27 @@ int getFieldDistance(LLVMStructDef::FieldDef fields,std::string field_name){
     }
   }
   return -1;
+}
+
+ArrayIndicator::ArrayIndicator(std::string name, llvm::Value *index) : VariableIndicator(name){
+    index_ = index;
+}
+
+void ArrayIndicator::set(LLVMVariableMap *target, llvm::Value *newVal){
+    TMP_DEBUGL;
+    TMP_DEBUGL;
+    TMP_DEBUGS(name_.c_str());
+    auto var = (LLVMArray *)target->getVariable(name_);
+    TMP_DEBUGL;
+    TMP_DEBUGP(newVal);
+    TMP_DEBUGS(typeid(var).name());
+    TMP_DEBUGI(index_);
+    var->set(index_, newVal);
+    TMP_DEBUGL;
+}
+
+llvm::Value *ArrayIndicator::get(LLVMVariableMap *target){
+    TMP_DEBUGL;
+    auto var = (LLVMArray *)target->getVariable(name_);
+    return var->get(index_);
 }
