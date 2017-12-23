@@ -37,7 +37,7 @@ ASTNODE *make_astnode();
 ASTNODE *make_ast_op(OPERATION op, ASTNODE *lhr, ASTNODE *rhr);
 ASTNODE *make_ast_cmd(OPERATION op, ASTNODE *argp);
 ASTNODE *make_ast_def_var(char *name, char *type_name);
-ASTNODE *make_ast_def_array(char *name, char *type_name);
+ASTNODE *make_ast_def_array(char *name, char *type_name, ASTNODE *size);
 ASTNODE *make_ast_set_var(char *name, ASTNODE *rhr);
 ASTNODE *make_ast_set_member_var(char *var_name, char *member_name, ASTNODE *newval);
 ASTNODE *make_ast_get_member_var(char *var_name, char *member_name);

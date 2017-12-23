@@ -131,9 +131,9 @@ def_var
     {
     $$ = make_ast_def_var($2, $3);
     }
-    | VAR NAME '[' NAME ']'
+    | VAR NAME '[' NAME ']' '(' expr ')'
     {
-    $$ = make_ast_def_array($2, $4);
+    $$ = make_ast_def_array($2, $4, $7);
     }
     ;
 set_var

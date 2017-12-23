@@ -106,7 +106,7 @@ std::map<std::string, MugichaKlassDef *> MugichaKlassDefMap::getMap(){
   return map;
 }
 
-void makeMugichaVariable(std::shared_ptr<MugichaScopeInfo> scope, std::string name ,TYPE type){
+void makeMugichaVariable(std::shared_ptr<MugichaScopeInfo> scope, std::string name ,TYPE type, llvm::Value *size){
   auto varMap = scope->getVarMap();
   auto expr = scope->makeExprBuilder();
 
@@ -120,7 +120,11 @@ void makeMugichaVariable(std::shared_ptr<MugichaScopeInfo> scope, std::string na
       break;
     }
     case ARRAY: {
-      varMap->makeArray(name, type);
+      llvm::ConstantInt* CI = llvm::dyn_cast<llvm::ConstantInt>(size);
+      if (!CI) {
+        ASSERT_FAIL_BLOCK();
+      }
+      varMap->makeArray(name, type, CI->getSExtValue());
       break;
     }
     default: {
@@ -310,7 +314,11 @@ llvm::Value *exec_def_var_codegen(ASTNODE *ap , std::shared_ptr<MugichaScopeInfo
 {
   auto expr = scope->makeExprBuilder();
 
-  makeMugichaVariable(scope, ap->sym->name ,ap->type);
+  llvm::Value *size;
+  if(ap->left){
+    size = eval_node_codegen(ap->left, scope);
+  }
+  makeMugichaVariable(scope, ap->sym->name ,ap->type, size);
 
   TMP_DEBUGL;
   return expr->makeConst(-1); // TODO
@@ -562,7 +570,11 @@ llvm::Value *exec_def_func_codegen(ASTNODE *ap, std::shared_ptr<MugichaScopeInfo
         TMP_DEBUGL;
         TMP_DEBUGS("set arg");
         TMP_DEBUGS(argName.c_str());
-        makeMugichaVariable(new_scope, argName, argType);
+        llvm::Value *size;
+        if(ap->left){
+          size = eval_node_codegen(ap->left, new_scope);
+        }
+        makeMugichaVariable(new_scope, argName, argType, size);
         TMP_DEBUGL;
         auto target = new VariableIndicator(argName); // TODO this memory needs free after process
         TMP_DEBUGL;
@@ -660,7 +672,11 @@ llvm::Value *exec_def_method_codegen(ASTNODE *ap, std::shared_ptr<MugichaScopeIn
         TMP_DEBUGL;
         TMP_DEBUGS("set arg");
         TMP_DEBUGS(argName.c_str());
-        makeMugichaVariable(new_scope, argName, argType);
+        llvm::Value *size;
+        if(ap->left){
+          size = eval_node_codegen(ap->left, new_scope);
+        }
+        makeMugichaVariable(new_scope, argName, argType, size);
         TMP_DEBUGL;
         auto target = new VariableIndicator(argName); // TODO this memory needs free after process
         TMP_DEBUGL;
