@@ -145,9 +145,10 @@ private:
   LLVMStructDef *struct_def_;
   llvm::AllocaInst *alloca_inst;
   llvm::AllocaInst *alloca_inst_ptr;
+  int size_;
 
   public:
-    LLVMArray(std::shared_ptr<LLVMModuleBuilder> module, std::string name, std::shared_ptr<LLVMStructDefMap> struct_def_map, TYPE type);
+    LLVMArray(std::shared_ptr<LLVMModuleBuilder> module, std::string name, std::shared_ptr<LLVMStructDefMap> struct_def_map, TYPE type, int size);
 
     llvm::ArrayType *getArrayType();
 
@@ -214,7 +215,7 @@ LLVMLocalVariableMap(std::shared_ptr<LLVMModuleBuilder> module, std::shared_ptr<
 
   virtual void makeVariable(std::string name ,TYPE type);
   void makeStruct(std::string name, LLVMStructDef *structDef);
-  void makeArray(std::string name, TYPE type);
+  void makeArray(std::string name, TYPE type, int size);
 };
 
 llvm::PointerType *getOpequePtrType(llvm::LLVMContext *context);

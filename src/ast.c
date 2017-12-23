@@ -272,7 +272,7 @@ ASTNODE *make_ast_def_var(char *name, char *type_name)
     return np;
 }
 
-ASTNODE *make_ast_def_array(char *name, char *type_name)
+ASTNODE *make_ast_def_array(char *name, char *type_name, ASTNODE *size)
 {
   ASTNODE *np;
 
@@ -285,7 +285,7 @@ ASTNODE *make_ast_def_array(char *name, char *type_name)
   if(np->type.elem_kind == KLASS) np->type.klass = lookup_make_symbol(type_name);
   np->op         = DEF_VAR;
   np->sym        = lookup_make_symbol(name);
-  np->left       = NULL;
+  np->left       = size;
   np->right      = NULL;
 
   return np;

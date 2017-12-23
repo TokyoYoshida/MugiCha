@@ -369,13 +369,14 @@ llvm::Value *LLVMStruct::get(){
 
 llvm::ArrayType *LLVMArray::getArrayType(){
   auto elem_type = astType2LLVMType(module_, type_.elem_kind);
-  auto atype = llvm::ArrayType::get(elem_type, 100);// TODO : this is draft code
+  auto atype = llvm::ArrayType::get(elem_type, size_);
 
   return atype;
 }
 
-LLVMArray::LLVMArray(std::shared_ptr<LLVMModuleBuilder> module, std::string name, std::shared_ptr<LLVMStructDefMap> struct_def_map, TYPE type) : LLVMVariable(module, name, type, struct_def_map) {
+LLVMArray::LLVMArray(std::shared_ptr<LLVMModuleBuilder> module, std::string name, std::shared_ptr<LLVMStructDefMap> struct_def_map, TYPE type, int size) : LLVMVariable(module, name, type, struct_def_map) {
 TMP_DEBUGL;
+  size_ = size;
   auto iBuilder = module_->getBuilder();
   auto atype = getArrayType();
 
@@ -487,9 +488,9 @@ void LLVMLocalVariableMap::makeStruct(std::string name, LLVMStructDef *structDef
   TMP_DEBUGL;
 }
 
-void LLVMLocalVariableMap::makeArray(std::string name, TYPE type){
+void LLVMLocalVariableMap::makeArray(std::string name, TYPE type, int size){
   TMP_DEBUGL;
-  map[name] = new LLVMArray(module_, name ,struct_def_map_, type);
+  map[name] = new LLVMArray(module_, name ,struct_def_map_, type, size);
   TMP_DEBUGL;
 }
 

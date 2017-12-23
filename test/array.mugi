@@ -1,5 +1,5 @@
 func main() int {
-  var y [int]
+  var y [int](100)
   y[0] = 1
   y[1] = 100
   print(y[1])
