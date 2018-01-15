@@ -62,6 +62,7 @@ void print_op(ASTNODE *np){
 "func" return FUNCTION;
 "class" return CLASSDEF;
 "while" return WHILE;
+"new" return NEW;
 \"[^\"]*\" {
   char temp[STRING_LENGTH_MAX];
   char *s;

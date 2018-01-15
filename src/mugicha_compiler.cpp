@@ -48,75 +48,39 @@
 std::shared_ptr<MugichaScopeInfo> global_scope = std::make_shared<MugichaScopeInfo>();
 ASTNODE *global_ast_rootp;
 
-MugichaKlassDef::MugichaKlassDef(std::string name){
-  name_ = name;
-}
+llvm::Value *makeMugichaValue(std::shared_ptr<MugichaScopeInfo> scope ,TYPE type, llvm::Value *size){
+  auto module = scope->getModuleBuilder();
 
-void MugichaKlassDef::addMethod(std::string name, std::shared_ptr<LLVMFuncBuilder> func){
-  method_map[name] = func;
-}
-
-int MugichaKlassDef::getMethodId(std::string name){
-  auto iter = method_map.find(name);
-  return std::distance(method_map.begin(), iter);
-}
-
-int MugichaKlassDef::getMethodCount(){
-  return method_map.size();
-}
-
-std::map<std::string, std::shared_ptr<LLVMFuncBuilder>> MugichaKlassDef::getMethodMap(){
-  return method_map;
-}
-
-void MugichaKlassDefMap::set(std::string name, MugichaKlassDef *klass_def){
-  TMP_DEBUGS(name.c_str());
-  TMP_DEBUGP(&map);
-    map[name] = klass_def;
-}
-
-int MugichaKlassDefMap::size(){
-  return map.size();
-}
-
-MugichaKlassDef *MugichaKlassDefMap::get(std::string name){
-TMP_DEBUGL;
-TMP_DEBUGS(name.c_str());
-TMP_DEBUGP(&map);
-  auto def = map[name];
-
-  if(!def) ASSERT_FAIL_BLOCK();
-
-  return def;
-}
-
-void MugichaKlassDefMap::makeKlassDef(std::string name){
-  TMP_DEBUGS(name.c_str());
-  TMP_DEBUGP(&map);
-  map[name] = new MugichaKlassDef(name);
-  TMP_DEBUGP(&map);
-}
-
-int MugichaKlassDefMap::getDefId(std::string name){
-  auto iter = map.find(name);
-  return std::distance(map.begin(), iter);
-}
-
-std::map<std::string, MugichaKlassDef *> MugichaKlassDefMap::getMap(){
-  return map;
+  switch(type.kind){
+    case KLASS: {
+      auto klassDefMap = global_scope->getKlassDefMap();
+      auto klassDef = klassDefMap->get(type.klass->name);
+      auto klassId = klassDefMap->getDefId(klassDef->getDefName());
+      auto v = (LLVMVariable *)new Klass(module, klassDef, klassId, scope->getStorage());
+      return v->get();
+    }
+    case ARRAY: {
+      llvm::ConstantInt* CI = llvm::dyn_cast<llvm::ConstantInt>(size);
+      if (!CI) {
+        ASSERT_FAIL_BLOCK();
+      }
+      auto v = (LLVMVariable *)new LLVMArray(module, type, CI->getSExtValue());
+      return v->get();
+    }
+    default: {
+      ASSERT_FAIL_BLOCK();
+    }
+  }
 }
 
 void makeMugichaVariable(std::shared_ptr<MugichaScopeInfo> scope, std::string name ,TYPE type, llvm::Value *size){
   auto varMap = scope->getVarMap();
-  auto expr = scope->makeExprBuilder();
+  auto storage = scope->getStorage();
 
   switch(type.kind){
     case KLASS: {
-      auto structDef = global_scope->getStructDefMap()->get(type.klass->name);
-      varMap->makeStruct(name, structDef);
-      auto target = new StructIndicator(name, KLASS_ID_VAL_NAME);
-      auto klassId = global_scope->getKlassDefMap()->getDefId(type.klass->name);
-      varMap->set(target, expr->makeConst(klassId));
+      auto klassDef = global_scope->getKlassDefMap()->get(type.klass->name);
+      varMap->makeClass(name, klassDef, storage);
       break;
     }
     case ARRAY: {
@@ -154,8 +118,13 @@ MugichaScopeInfo::MugichaScopeInfo() {
   context_ = std::make_shared<llvm::LLVMContext>();
   module_ = std::make_shared<LLVMModuleBuilder>("mugicha", context_);
   struct_def_map_ = std::make_shared<LLVMStructDefMap>(module_);
-  var_map_ = std::make_shared<LLVMLocalVariableMap>(module_, struct_def_map_);
-  klass_def_map_ = std::make_shared<MugichaKlassDefMap>();
+  klass_def_map_ = std::make_shared<KlassDefMap>(module_);
+  var_map_ = std::make_shared<LLVMLocalVariableMap>(module_, struct_def_map_, klass_def_map_);
+  storage_ = std::make_shared<LLVMHeapStorage>(module_);
+  TMP_DEBUGP(storage_.get());
+  if( storage_.get() == nullptr ){
+    ASSERT_FAIL_BLOCK();
+  }
 }
 
 MugichaScopeInfo::MugichaScopeInfo(std::shared_ptr<MugichaScopeInfo> old_scope) {
@@ -164,6 +133,8 @@ MugichaScopeInfo::MugichaScopeInfo(std::shared_ptr<MugichaScopeInfo> old_scope) 
   var_map_ = old_scope->var_map_;
   struct_def_map_ = old_scope->struct_def_map_;
   klass_def_map_ = old_scope->klass_def_map_;
+  storage_ = old_scope->storage_;
+  func_ptr_arr_ = old_scope->func_ptr_arr_;
 }
 
 std::shared_ptr<LLVMModuleBuilder> MugichaScopeInfo::getModuleBuilder(){
@@ -216,8 +187,12 @@ std::shared_ptr<LLVMStructDefMap> MugichaScopeInfo::getStructDefMap()
   return struct_def_map_;
 }
 
-std::shared_ptr<MugichaKlassDefMap> MugichaScopeInfo::getKlassDefMap(){
+std::shared_ptr<KlassDefMap> MugichaScopeInfo::getKlassDefMap(){
   return klass_def_map_;
+}
+
+std::shared_ptr<LLVMStorage> MugichaScopeInfo::getStorage(){
+  return storage_;
 }
 
 int MugichaScopeInfo::getKlassMax(){
@@ -658,8 +633,8 @@ llvm::Value *exec_def_method_codegen(ASTNODE *ap, std::shared_ptr<MugichaScopeIn
     auto iter = argList.begin();
     llvm::Value *recieverVal = static_cast<llvm::Value*>( &*iter);
 
-    auto strutDef = global_scope->getStructDefMap()->get(ap->reciever_type.klass->name);
-    varMap->makeStruct("this", strutDef);
+    auto klassDef = global_scope->getKlassDefMap()->get(ap->reciever_type.klass->name);
+    varMap->makeClass("this", klassDef, new_scope->getStorage());
     auto reciever = new VariableIndicator("this");
     varMap->set(reciever, recieverVal);
 
@@ -904,9 +879,9 @@ TMP_DEBUGL;
     ASSERT_FAIL_BLOCK();
   }
 
-  global_scope->getStructDefMap()->makeStructDef(ap->sym->name, fields);
+  // global_scope->getStructDefMap()->makeStructDef(ap->sym->name, fields);
 TMP_DEBUGS(ap->sym->name);
-  global_scope->getKlassDefMap()->makeKlassDef(ap->sym->name);
+  global_scope->getKlassDefMap()->makeKlassDef(ap->sym->name, fields);
 
   TMP_DEBUGL;
   // auto structTy = llvm::StructType::create(fields, "Testx", false);
@@ -916,6 +891,17 @@ TMP_DEBUGS(ap->sym->name);
   // block->getInstList().push_back(newinst);
 
   return NULL;
+}
+
+llvm::Value *exec_new_class_codegen(ASTNODE *ap, std::shared_ptr<MugichaScopeInfo> scope)
+{
+  auto expr = scope->makeExprBuilder();
+
+  llvm::Value *size;
+  if(ap->left){
+    size = eval_node_codegen(ap->left, scope);
+  }
+  return makeMugichaValue(scope, ap->type, size);
 }
 
 llvm::Value *exec_set_member_var_codegen(ASTNODE *ap , std::shared_ptr<MugichaScopeInfo> scope)
@@ -1160,6 +1146,8 @@ llvm::Value *eval_node_op_codegen(ASTNODE *ap, std::shared_ptr<MugichaScopeInfo>
     return exec_call_method_codegen(ap, scope);
     case DEF_CLASS:
     return exec_def_class_codegen(ap ,scope);
+    case NEW_CLASS:
+    return exec_new_class_codegen(ap ,scope);
     case SET_MEMBER_VAR:
     return exec_set_member_var_codegen(ap, scope);
     case GET_MEMBER_VAR:

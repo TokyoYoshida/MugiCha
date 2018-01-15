@@ -111,7 +111,28 @@ llvm::Value *LLVMModuleBuilder::makePrintf(std::vector<llvm::Value *> values){
 
   return builder_->CreateCall(printfFunc, values);
 }
-// };
+
+llvm::Value *LLVMModuleBuilder::makeMalloc(llvm::Constant *AllocSize, llvm::Type *DestTy){
+  // printf の関数準備
+  auto ITy = llvm::Type::getInt32Ty(*context_);
+  auto castedAllocSize = llvm::ConstantExpr::getTruncOrBitCast(AllocSize, ITy);
+  std::vector<llvm::Value *>  fmalloc_args({castedAllocSize});
+  std::vector<llvm::Type *> args;
+  args.push_back(builder_->getInt32Ty());
+  llvm::FunctionType *printfType =
+    llvm::FunctionType::get(llvm::Type::getInt8PtrTy(*context_), args, true);
+  llvm::Constant *func =
+      module_->getOrInsertFunction("malloc", printfType);
+
+  return builder_->CreateCall(func, fmalloc_args);
+}
+
+llvm::AllocaInst *LLVMModuleBuilder::makeMallocForType(llvm::Type *DestTy){
+  auto AllocSize = llvm::ConstantExpr::getSizeOf(DestTy);
+  auto inst = makeMalloc(AllocSize, DestTy);
+  auto destPtrTy = llvm::PointerType::getUnqual(DestTy);
+  return (llvm::AllocaInst *)builder_->CreateBitCast(inst, destPtrTy);
+}
 
 LLVMFuncBuilder::LLVMFuncBuilder(std::shared_ptr<LLVMModuleBuilder> module, llvm::FunctionType *funcType, std::string name){
   module_ = module;
@@ -203,23 +224,37 @@ llvm::Instruction *LLVMExprBuilder::makeCalcOp(llvm::AddrSpaceCastInst::BinaryOp
   return inst;
 }
 
-LLVMVariable::LLVMVariable(std::shared_ptr<LLVMModuleBuilder> module, std::string name, TYPE type, std::shared_ptr<LLVMStructDefMap> struct_def_map){
+LLVMStorage::LLVMStorage(std::shared_ptr<LLVMModuleBuilder> module){
+  TMP_DEBUGP(module.get());
+  module_ = module;
+}
+
+LLVMHeapStorage::LLVMHeapStorage(std::shared_ptr<LLVMModuleBuilder> module) : LLVMStorage(module) {
+}
+
+llvm::AllocaInst *LLVMHeapStorage::CreateAlloc(llvm::Type *DestTy){
+  TMP_DEBUGL;
+  auto ret = module_->makeMallocForType(DestTy);
+  TMP_DEBUGL;
+  return ret;
+}
+
+LLVMVariable::LLVMVariable(std::shared_ptr<LLVMModuleBuilder> module, TYPE type){
   type_ = type;
   module_ = module;
 
   TMP_DEBUGI(type.kind);
-  DEBUGS(name.c_str());
   DEBUGS(get_type_description(type.kind));
   switch(type.kind){
     case INT:
     case BOOLTYPE:
-      value_ = module->getBuilder()->CreateAlloca(llvm::Type::getInt32Ty(*module->getContext()), 0, name);
+      value_ = module->getBuilder()->CreateAlloca(llvm::Type::getInt32Ty(*module->getContext()), 0);
       break;
     case DOUBLE:
-      value_ = module->getBuilder()->CreateAlloca(llvm::Type::getDoubleTy(*module->getContext()), 0, name);
+      value_ = module->getBuilder()->CreateAlloca(llvm::Type::getDoubleTy(*module->getContext()), 0);
       break;
     case STRING:
-      value_ = module->getBuilder()->CreateAlloca(llvm::Type::getInt8PtrTy(*module->getContext()), 0, name);
+      value_ = module->getBuilder()->CreateAlloca(llvm::Type::getInt8PtrTy(*module->getContext()), 0);
       break;
     case ARRAY:
     case KLASS:
@@ -296,17 +331,20 @@ void LLVMStructDefMap::makeStructDef(std::string def_name, LLVMStructDef::FieldD
   map[def_name] = sd;
 }
 
-LLVMStructInitializer::LLVMStructInitializer(std::shared_ptr<LLVMModuleBuilder> module, LLVMStructDef *struct_def, std::string name){
+LLVMStructInitializer::LLVMStructInitializer(std::shared_ptr<LLVMModuleBuilder> module, LLVMStructDef *struct_def){
   type.kind = KLASS;
   type.klass = lookup_symbol(struct_def->getDefName().c_str());
   TMP_DEBUGS(type.klass->name);
 }
 
-LLVMStruct::LLVMStruct(std::shared_ptr<LLVMModuleBuilder> module,LLVMStructDef *struct_def, std::string name, std::shared_ptr<LLVMStructDefMap> struct_def_map) :  LLVMStructInitializer(module, struct_def, name) ,LLVMVariable(module, name, type, struct_def_map) {
+LLVMStruct::LLVMStruct(std::shared_ptr<LLVMModuleBuilder> module,LLVMStructDef *struct_def, std::shared_ptr<LLVMStorage> storage) :  LLVMStructInitializer(module, struct_def) ,LLVMVariable(module, type) {
 TMP_DEBUGL;
   struct_def_ = struct_def;
+  storage_ = storage;
   auto iBuilder = module_->getBuilder();
-  alloca_inst= iBuilder->CreateAlloca(struct_def->getStructTy(), 0);
+  TMP_DEBUGL;
+  TMP_DEBUGP(storage_.get());
+  auto alloca_inst= storage->CreateAlloc(struct_def->getStructTy());
   TMP_DEBUGL;
 
   auto ptr = llvm::PointerType::getUnqual(struct_def->getStructPtr());
@@ -367,6 +405,12 @@ llvm::Value *LLVMStruct::get(){
   // return value_;
 }
 
+Klass::Klass(std::shared_ptr<LLVMModuleBuilder> module, LLVMStructDef *struct_def, int klass_id, std::shared_ptr<LLVMStorage> storage) : LLVMStruct(module ,struct_def, storage){
+  llvm::Value *kid = llvm::ConstantInt::get(llvm::Type::getInt32Ty(*module_->getContext()), klass_id);
+  set(KLASS_ID_VAL_NAME, kid);
+}
+
+
 llvm::ArrayType *LLVMArray::getArrayType(){
   auto elem_type = astType2LLVMType(module_, type_.elem_kind);
   auto atype = llvm::ArrayType::get(elem_type, size_);
@@ -374,7 +418,68 @@ llvm::ArrayType *LLVMArray::getArrayType(){
   return atype;
 }
 
-LLVMArray::LLVMArray(std::shared_ptr<LLVMModuleBuilder> module, std::string name, std::shared_ptr<LLVMStructDefMap> struct_def_map, TYPE type, int size) : LLVMVariable(module, name, type, struct_def_map) {
+KlassDef::KlassDef(std::shared_ptr<LLVMModuleBuilder> module, std::string name, FieldDef fields) : LLVMStructDef(module, name, fields) {
+}
+
+void KlassDef::addMethod(std::string name, std::shared_ptr<LLVMFuncBuilder> func){
+  method_map[def_name_] = func;
+}
+
+int KlassDef::getMethodId(std::string name){
+  auto iter = method_map.find(def_name_);
+  return std::distance(method_map.begin(), iter);
+}
+
+int KlassDef::getMethodCount(){
+  return method_map.size();
+}
+
+std::map<std::string, std::shared_ptr<LLVMFuncBuilder>> KlassDef::getMethodMap(){
+  return method_map;
+}
+
+KlassDefMap::KlassDefMap(std::shared_ptr<LLVMModuleBuilder> module){
+  module_ = module;
+}
+
+void KlassDefMap::set(std::string name, KlassDef *klass_def){
+  TMP_DEBUGS(name.c_str());
+  TMP_DEBUGP(&map);
+    map[name] = klass_def;
+}
+
+int KlassDefMap::size(){
+  return map.size();
+}
+
+KlassDef *KlassDefMap::get(std::string name){
+TMP_DEBUGL;
+TMP_DEBUGS(name.c_str());
+TMP_DEBUGP(&map);
+  auto def = map[name];
+
+  if(!def) ASSERT_FAIL_BLOCK();
+
+  return def;
+}
+
+void KlassDefMap::makeKlassDef(std::string name, KlassDef::FieldDef fields){
+  TMP_DEBUGS(name.c_str());
+  TMP_DEBUGP(&map);
+  map[name] = new KlassDef(module_, name, fields);
+  TMP_DEBUGP(&map);
+}
+
+int KlassDefMap::getDefId(std::string name){
+  auto iter = map.find(name);
+  return std::distance(map.begin(), iter);
+}
+
+std::map<std::string, KlassDef *> KlassDefMap::getMap(){
+  return map;
+}
+
+LLVMArray::LLVMArray(std::shared_ptr<LLVMModuleBuilder> module, TYPE type, int size) : LLVMVariable(module, type) {
 TMP_DEBUGL;
   size_ = size;
   auto iBuilder = module_->getBuilder();
@@ -453,9 +558,10 @@ llvm::PointerType *LLVMArray::getArrayPtr(){
   return ptr;
 }
 
-LLVMVariableMap::LLVMVariableMap(std::shared_ptr<LLVMModuleBuilder> module, std::shared_ptr<LLVMStructDefMap> struct_def_map){
+LLVMVariableMap::LLVMVariableMap(std::shared_ptr<LLVMModuleBuilder> module, std::shared_ptr<LLVMStructDefMap> struct_def_map, std::shared_ptr<KlassDefMap> klass_def_map){
   module_ = module;
   struct_def_map_ = struct_def_map;
+  klass_def_map_ = klass_def_map;
 }
 
 void LLVMVariableMap::set(VariableIndicator *target, llvm::Value *newVal){
@@ -474,23 +580,25 @@ LLVMVariable *LLVMVariableMap::LLVMVariableMap::getVariable(std::string name){
   return map[name];
 }
 
-LLVMLocalVariableMap::LLVMLocalVariableMap(std::shared_ptr<LLVMModuleBuilder> module, std::shared_ptr<LLVMStructDefMap> struct_def_map) : LLVMVariableMap(module ,struct_def_map){
+LLVMLocalVariableMap::LLVMLocalVariableMap(std::shared_ptr<LLVMModuleBuilder> module, std::shared_ptr<LLVMStructDefMap> struct_def_map, std::shared_ptr<KlassDefMap> klass_def_map) : LLVMVariableMap(module ,struct_def_map, klass_def_map){
 
 }
 
 void LLVMLocalVariableMap::makeVariable(std::string name ,TYPE type){
-  map[name] = new LLVMVariable(module_, name, type, struct_def_map_);
+  map[name] = new LLVMVariable(module_, type);
 }
 
-void LLVMLocalVariableMap::makeStruct(std::string name, LLVMStructDef *structDef){
+void LLVMLocalVariableMap::makeClass(std::string name, KlassDef *klassDef, std::shared_ptr<LLVMStorage> storage){
   TMP_DEBUGL;
-  map[name] = new LLVMStruct(module_, structDef, name ,struct_def_map_);
+  auto klassId = klass_def_map_->getDefId(klassDef->getDefName());
+  auto c = new Klass(module_, klassDef, klassId, storage);
+  map[name] = c;
   TMP_DEBUGL;
 }
 
 void LLVMLocalVariableMap::makeArray(std::string name, TYPE type, int size){
   TMP_DEBUGL;
-  map[name] = new LLVMArray(module_, name ,struct_def_map_, type, size);
+  map[name] = new LLVMArray(module_, type, size);
   TMP_DEBUGL;
 }
 

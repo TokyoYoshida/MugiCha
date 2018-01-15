@@ -254,6 +254,24 @@ ASTNODE *make_ast_def_class(char *name, char *super_name, ASTNODE *def_vars)
   return np;
 }
 
+ASTNODE *make_ast_new_class(char *name, ASTNODE *set_args)
+{
+    ASTNODE *np;
+
+
+    np = make_astnode();
+
+    np->type.kind =  get_type_by_name(name);
+    if(np->type.kind == KLASS) np->type.klass = lookup_make_symbol(name);
+    np->op         = NEW_CLASS;
+    np->sym        = NULL;
+    np->left       = NULL;
+    np->right      = NULL;
+    np->set_args   = set_args;
+
+    return np;
+}
+
 
 ASTNODE *make_ast_def_var(char *name, char *type_name)
 {
