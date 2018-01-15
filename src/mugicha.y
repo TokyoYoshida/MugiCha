@@ -20,9 +20,9 @@ int yydebug=1;
 %token <np>      DOUBLE_LITERAL INT_LITERAL BOOL_LITERAL STRING_LITERAL
 %token <str>     NAME
 %token '+' '-' '*' '/' '\n' '(' ')' '.' ':' '=' EQUAL PRINT VAR FUNCTION CLASSDEF NOTEQUAL '!' '<' '>' '\"' '[' ']' ','
-%token SMALLEREQUAL GREATEREQUAL IF ELSE WHILE
+%token SMALLEREQUAL GREATEREQUAL IF ELSE WHILE NEW
 %type <np> prog stmt expr expr_print def_var set_var set_member_var
-%type <np> def_class def_vars
+%type <np> def_class new_class def_vars
 %type <np> def_func call_func def_method call_method primary_bool expr_cmp_eq expr_cmp_noteq
 %type <np> expr_cmp_greater expr_cmp_smaller expr_cmp_greaterequal expr_cmp_smallerequal
 %type <np> if_stmt expr_bool while_stmt primary_double primary_string
@@ -174,6 +174,7 @@ expr
     | primary_string
     | call_func
     | call_method
+    | new_class
     | primary_get_variable
     | primary_get_member_var
     | primary_get_array_var
@@ -193,6 +194,16 @@ expr
     | expr '/' expr
     {
       $$ = make_ast_op(DIV, $1, $3);
+    }
+    ;
+new_class
+    : NEW NAME '(' expr_list ')'
+    {
+    $$ = make_ast_new_class($2, $4);
+    }
+    | NEW NAME '(' ')'
+    {
+    $$ = make_ast_new_class($2, NULL);
     }
     ;
 call_func

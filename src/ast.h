@@ -49,6 +49,7 @@ ASTNODE *make_ast_def_method(char *reciever_name, char *method_name, ASTNODE *de
 ASTNODE *make_ast_call_method(char *reviever_name, char *method_name, ASTNODE *set_args);
 
 ASTNODE *make_ast_def_class(char *name, char *super_name, ASTNODE *def_vars);
+ASTNODE *make_ast_new_class(char *name, ASTNODE *set_args);
 
 ASTNODE *make_ast_call_func(char *name, ASTNODE *set_args);
 ASTNODE *make_ast_if(ASTNODE *cond, ASTNODE *then_stmt, ASTNODE *else_stmt);

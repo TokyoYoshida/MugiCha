@@ -21,6 +21,8 @@ class LLVMModuleBuilder {
   llvm::IRBuilder<> *getBuilder();
 
   llvm::Value *makePrintf(std::vector<llvm::Value *> values);
+  llvm::Value *makeMalloc(llvm::Constant *AllocSize, llvm::Type *DestTy);
+  llvm::AllocaInst *makeMallocForType(llvm::Type *DestTy);
 };
 
 
@@ -60,6 +62,19 @@ public:
   llvm::Instruction *makeCalcOp(llvm::BasicBlock *block ,llvm::AddrSpaceCastInst::BinaryOps ops,llvm::Value *lhs,llvm::Value *rhs );
 };
 
+class LLVMStorage {
+  public:
+    std::shared_ptr<LLVMModuleBuilder> module_;
+    LLVMStorage(std::shared_ptr<LLVMModuleBuilder> module);
+    virtual llvm::AllocaInst *CreateAlloc(llvm::Type *DestTy) = 0;
+};
+
+class LLVMHeapStorage : public LLVMStorage {
+public:
+  LLVMHeapStorage(std::shared_ptr<LLVMModuleBuilder> module);
+  virtual llvm::AllocaInst *CreateAlloc(llvm::Type *DestTy);
+};
+
 class LLVMStructDefMap;
 
 class LLVMVariable {
@@ -69,7 +84,7 @@ class LLVMVariable {
   llvm::Value *value_;
 
   public:
-  LLVMVariable(std::shared_ptr<LLVMModuleBuilder> module, std::string name, TYPE type, std::shared_ptr<LLVMStructDefMap> struct_def_map);
+  LLVMVariable(std::shared_ptr<LLVMModuleBuilder> module, TYPE type);
 
   virtual void set(llvm::Value *newVal);
 
@@ -121,23 +136,61 @@ class LLVMStructInitializer {
 public:
   TYPE type;
 
-  LLVMStructInitializer(std::shared_ptr<LLVMModuleBuilder> module, LLVMStructDef *struct_def, std::string name);
+  LLVMStructInitializer(std::shared_ptr<LLVMModuleBuilder> module, LLVMStructDef *struct_def);
 };
 
 class LLVMStruct : public LLVMStructInitializer ,public LLVMVariable {
 private:
   LLVMStructDef *struct_def_;
-  llvm::AllocaInst *alloca_inst;
-  llvm::AllocaInst *alloca_inst_ptr;
-
+  std::shared_ptr<LLVMStorage> storage_;
   public:
-  LLVMStruct(std::shared_ptr<LLVMModuleBuilder> module, LLVMStructDef *struct_def, std::string name, std::shared_ptr<LLVMStructDefMap> struct_def_map);
+  LLVMStruct(std::shared_ptr<LLVMModuleBuilder> module, LLVMStructDef *struct_def, std::shared_ptr<LLVMStorage> storage);
 
   virtual void set(std::string member_name, llvm::Value *newVal);
   virtual void set(llvm::Value *newVal);
 
   virtual llvm::Value *get(std::string member_name);
   virtual llvm::Value *get();
+};
+
+class Klass : public LLVMStruct {
+  public:
+    Klass(std::shared_ptr<LLVMModuleBuilder> module, LLVMStructDef *struct_def, int klass_id, std::shared_ptr<LLVMStorage> storage);
+};
+
+class KlassDef : public LLVMStructDef {
+  std::map<std::string, std::shared_ptr<LLVMFuncBuilder>> method_map;
+
+public:
+  KlassDef(std::shared_ptr<LLVMModuleBuilder> module, std::string name, FieldDef fields);
+
+  void addMethod(std::string name, std::shared_ptr<LLVMFuncBuilder> func);
+
+  int getMethodId(std::string name);
+
+  int getMethodCount();
+
+  std::map<std::string, std::shared_ptr<LLVMFuncBuilder>> getMethodMap();
+};
+
+class KlassDefMap {
+  std::shared_ptr<LLVMModuleBuilder> module_;
+  std::map<std::string, KlassDef *> map;
+
+public:
+  KlassDefMap(std::shared_ptr<LLVMModuleBuilder> module);
+
+  void set(std::string name, KlassDef *klass_def);
+
+  KlassDef *get(std::string name);
+
+  void makeKlassDef(std::string name, KlassDef::FieldDef fields);
+
+  int getDefId(std::string name);
+
+  int size();
+
+  std::map<std::string, KlassDef *> getMap();
 };
 
 class LLVMArray : public LLVMVariable {
@@ -148,7 +201,7 @@ private:
   int size_;
 
   public:
-    LLVMArray(std::shared_ptr<LLVMModuleBuilder> module, std::string name, std::shared_ptr<LLVMStructDefMap> struct_def_map, TYPE type, int size);
+    LLVMArray(std::shared_ptr<LLVMModuleBuilder> module, TYPE type, int size);
 
     llvm::ArrayType *getArrayType();
 
@@ -197,8 +250,9 @@ class LLVMVariableMap {
   std::shared_ptr<LLVMModuleBuilder> module_;
   std::map<std::string, LLVMVariable *> map;
   std::shared_ptr<LLVMStructDefMap> struct_def_map_;
+  std::shared_ptr<KlassDefMap> klass_def_map_;
 
-  LLVMVariableMap(std::shared_ptr<LLVMModuleBuilder> module,  std::shared_ptr<LLVMStructDefMap> struct_def_map);
+  LLVMVariableMap(std::shared_ptr<LLVMModuleBuilder> module,  std::shared_ptr<LLVMStructDefMap> struct_def_map, std::shared_ptr<KlassDefMap> klass_def_map);
 
   virtual void makeVariable(std::string name ,TYPE type) = 0;
 
@@ -211,10 +265,10 @@ class LLVMVariableMap {
 
 class LLVMLocalVariableMap : public LLVMVariableMap {
   public:
-LLVMLocalVariableMap(std::shared_ptr<LLVMModuleBuilder> module, std::shared_ptr<LLVMStructDefMap> struct_def_map);
+LLVMLocalVariableMap(std::shared_ptr<LLVMModuleBuilder> module, std::shared_ptr<LLVMStructDefMap> struct_def_map, std::shared_ptr<KlassDefMap> klass_def_map);
 
   virtual void makeVariable(std::string name ,TYPE type);
-  void makeStruct(std::string name, LLVMStructDef *structDef);
+  void makeClass(std::string name, KlassDef *klassDef, std::shared_ptr<LLVMStorage> storage);
   void makeArray(std::string name, TYPE type, int size);
 };
 
@@ -224,6 +278,8 @@ llvm::Value *makePrintf(std::shared_ptr<LLVMModuleBuilder> module,std::shared_pt
 llvm::Type *astType2LLVMType(std::shared_ptr<LLVMModuleBuilder> module, TYPEKIND kind);
 
 int getFieldDistance(LLVMStructDef::FieldDef fields,std::string field_name);
+
+#define KLASS_ID_VAL_NAME "$ID"
 
 #endif /* __cplusplus */
 
